@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#173b7a">
+  <meta name="description" content="Patrimonio - Gestión de patrimonio e inversiones">
+  <title>Patrimonio</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #173b7a;
+      --primary2: #2c64c7;
+      --background: #f4f6fa;
+      --card: #ffffff;
+      --text: #172033;
+      --muted: #687386;
+      --border: #e3e7ee;
+      --positive: #16803c;
+      --negative: #c62828;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--background);
+      color: var(--text);
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Arial,
+        sans-serif;
+    }
+
+    body {
+      padding:
+        env(safe-area-inset-top)
+        0
+        env(safe-area-inset-bottom);
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px 16px 50px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      margin: 14px 0;
+      box-shadow: 0 4px 18px rgba(23, 32, 51, .07);
+    }
+
+    .login {
+      max-width: 430px;
+      margin: 10vh auto 0;
+    }
+
+    .brand {
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: -.6px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin: 8px 0 20px;
+    }
+
+    .input {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid #d7dce5;
+      background: white;
+      margin-top: 10px;
+      outline: none;
+    }
+
+    .input:focus {
+      border-color: var(--primary2);
+      box-shadow: 0 0 0 3px rgba(44,100,199,.12);
+    }
+
+    .button {
+      width: 100%;
+      padding: 14px;
+      border: 0;
+      border-radius: 12px;
+      background: var(--primary);
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .button:disabled {
+      opacity: .6;
+      cursor: default;
+    }
+
+    .button-secondary {
+      background: white;
+      color: var(--primary);
+      border: 1px solid #d7dce5;
+    }
+
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .top .button {
+      width: auto;
+      margin: 0;
+      padding: 9px 14px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--primary), var(--primary2));
+      color: white;
+      border: 0;
+    }
+
+    .hero .muted {
+      color: #dbe7ff;
+    }
+
+    .hero-value {
+      font-size: 36px;
+      font-weight: 800;
+      margin-top: 5px;
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 800;
+      margin: 22px 0 8px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .column {
+      min-width: 0;
+    }
+
+    .name {
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    .amount {
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .small {
+      font-size: 13px;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #edf3ff;
+      color: #2457b8;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .position {
+      padding: 15px 0;
+      border-bottom: 1px solid #edf0f4;
+    }
+
+    .position:last-child {
+      border-bottom: 0;
+    }
+
+    .positive {
+      color: var(--positive);
+      font-weight: 700;
+    }
+
+    .negative {
+      color: var(--negative);
+      font-weight: 700;
+    }
+
+    .message {
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    .error {
+      color: var(--negative);
+    }
+
+    .success {
+      color: var(--positive);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 30px 10px;
+      color: var(--muted);
+    }
+
+    .empty {
+      color: var(--muted);
+      padding: 12px 0;
+    }
+
+    .footer {
+      text-align: center;
+      color: #8993a4;
+      font-size: 12px;
+      margin-top: 25px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 15px;
+    }
+
+    .summary-box {
+      background: rgba(255,255,255,.12);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .summary-label {
+      font-size: 12px;
+      color: #dbe7ff;
+    }
+
+    .summary-number {
+      font-size: 19px;
+      font-weight: 800;
+      margin-top: 3px;
+    }
+
+    @media (max-width: 600px) {
+      .wrap {
+        padding: 15px 12px 40px;
+      }
+
+      .brand {
+        font-size: 27px;
+      }
+
+      .hero-value {
+        font-size: 30px;
+      }
+
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .row.mobile-column {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<main class="wrap">
+
+  <!-- LOGIN -->
+  <section id="login" class="card login">
+    <div class="brand">Patrimonio</div>
+
+    <p class="subtitle">
+      Gestión de tu patrimonio e inversiones
+    </p>
+
+    <input
+      id="email"
+      class="input"
+      type="email"
+      autocomplete="email"
+      placeholder="Correo electrónico"
+    >
+
+    <input
+      id="password"
+      class="input"
+      type="password"
+      autocomplete="current-password"
+      placeholder="Contraseña"
+    >
+
+    <button id="loginButton" class="button">
+      Entrar
+    </button>
+
+    <div id="loginMessage" class="message"></div>
+  </section>
+
+
+  <!-- APP -->
+  <section id="app" class="hidden">
+
+    <header class="top">
+      <div class="brand">Patrimonio</div>
+
+      <button id="logoutButton" class="button button-secondary">
+        Salir
+      </button>
+    </header>
+
+
+    <div id="content">
+
+      <div class="loading">
+        Cargando patrimonio...
+      </div>
+
+    </div>
+
+
+    <div class="footer">
+      Patrimonio · conectado a Supabase
+    </div>
+
+  </section>
+
+</main>
+
+
+<script type="module">
+
+  import { createClient }
+    from "https://esm.sh/@supabase/supabase-js@2";
+
+
+  /* ==========================================================
+     SUPABASE
+     ========================================================== */
+
+  const SUPABASE_URL =
+    "https://rnwtvkhnhybdgxhmgebw.supabase.co";
+
+  const SUPABASE_KEY =
+    "sb_publishable_r00Qvz_GBmRi4fVj6O7scA_jIj9wuyN";
+
+  const supabase =
+    createClient(SUPABASE_URL, SUPABASE_KEY);
+
+
+  /* ==========================================================
+     ELEMENTOS
+     ========================================================== */
+
+  const $ = id =>
+    document.getElementById(id);
+
+
+  /* ==========================================================
+     FUNCIONES AUXILIARES
+     ========================================================== */
+
+  function euro(value) {
+
+    const number = Number(value || 0);
+
+    return new Intl.NumberFormat("es-ES", {
+      style: "currency",
+      currency: "EUR",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(number);
+
+  }
+
+
+  function number(value, decimals = 6) {
+
+    return Number(value || 0).toLocaleString(
+      "es-ES",
+      {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: decimals
+      }
+    );
+
+  }
+
+
+  function dateES(value) {
+
+    if (!value) return "";
+
+    const date =
+      new Date(value + "T00:00:00");
+
+    if (Number.isNaN(date.getTime())) {
+      return "";
+    }
+
+    return date.toLocaleDateString("es-ES");
+
+  }
+
+
+  function escapeHTML(value) {
+
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+
+  }
+
+
+  function showLogin() {
+
+    $("login").classList.remove("hidden");
+    $("app").classList.add("hidden");
+
+  }
+
+
+  function showApp() {
+
+    $("login").classList.add("hidden");
+    $("app").classList.remove("hidden");
+
+  }
+
+
+  /* ==========================================================
+     CARGAR APLICACIÓN
+     ========================================================== */
+
+  async function loadApp() {
+
+    try {
+
+      const sessionResult =
+        await supabase.auth.getSession();
+
+      const session =
+        sessionResult.data?.session;
+
+      if (!session) {
+
+        showLogin();
+
+        return;
+
+      }
+
+      showApp();
+
+      $("content").innerHTML =
+        '<div class="loading">Cargando patrimonio...</div>';
+
+
+      /* ------------------------------------------------------
+         CARTERAS
+         ------------------------------------------------------ */
+
+      const portfoliosResult =
+        await supabase
+          .from("carteras")
+          .select(
+            "id,nombre,descripcion,fecha_inicio,moneda"
+          )
+          .eq("activa", true)
+          .order("nombre");
+
+
+      if (portfoliosResult.error) {
+
+        throw portfoliosResult.error;
+
+      }
+
+
+      const portfolios =
+        portfoliosResult.data || [];
+
+
+      if (!portfolios.length) {
+
+        $("content").innerHTML = `
+          <section class="card">
+            <div class="section-title">
+              Mi patrimonio
+            </div>
+
+            <div class="empty">
+              No hay carteras activas en la base de datos.
+            </div>
+          </section>
+        `;
+
+        return;
+
+      }
+
+
+      let totalPatrimonio = 0;
+      let totalPosiciones = 0;
+      let html = "";
+
+
+      /* ------------------------------------------------------
+         CADA CARTERA
+         ------------------------------------------------------ */
+
+      for (const portfolio of portfolios) {
+
+        const componentsResult =
+          await supabase
+            .from("cartera_componentes")
+            .select(
+              "id,producto_id,cantidad,activo"
+            )
+            .eq("cartera_id", portfolio.id)
+            .eq("activo", true);
+
+
+        if (componentsResult.error) {
+
+          html += `
+            <section class="card">
+              <div class="error">
+                Error al cargar la cartera
+                ${escapeHTML(portfolio.nombre)}:
+                ${escapeHTML(componentsResult.error.message)}
+              </div>
+            </section>
+          `;
+
+          continue;
+
+        }
+
+
+        const components =
+          componentsResult.data || [];
+
+
+        let portfolioTotal = 0;
+        let positionsHTML = "";
+
+
+        /* ----------------------------------------------------
+           POSICIONES
+           ---------------------------------------------------- */
+
+        for (const component of components) {
+
+          const productResult =
+            await supabase
+              .from("productos")
+              .select(
+                "id,nombre,isin,moneda"
+              )
+              .eq(
+                "id",
+                component.producto_id
+              )
+              .maybeSingle();
+
+
+          if (productResult.error ||
+              !productResult.data) {
+
+            continue;
+
+          }
+
+
+          const product =
+            productResult.data;
+
+
+          /* --------------------------------------------------
+             ÚLTIMA VALORACIÓN
+             -------------------------------------------------- */
+
+          const valuationResult =
+            await supabase
+              .from("valoraciones_historicas")
+              .select(
+                "fecha,precio_unitario,valor_total"
+              )
+              .eq(
+                "producto_id",
+                component.producto_id
+              )
+              .order(
+                "fecha",
+                { ascending: false }
+              )
+              .limit(1)
+              .maybeSingle();
+
+
+          let price = 0;
+          let positionValue = 0;
+          let valuationDate = "";
+
+
+          if (!valuationResult.error &&
+              valuationResult.data) {
+
+            const valuation =
+              valuationResult.data;
+
+            price =
+              Number(
+                valuation.precio_unitario || 0
+              );
+
+            const storedTotal =
+              valuation.valor_total;
+
+            if (
+              storedTotal !== null &&
+              storedTotal !== undefined
+            ) {
+
+              positionValue =
+                Number(storedTotal || 0);
+
+            } else {
+
+              positionValue =
+                price *
+                Number(component.cantidad || 0);
+
+            }
+
+            valuationDate =
+              dateES(valuation.fecha);
+
+          }
+
+
+          const quantity =
+            Number(component.cantidad || 0);
+
+
+          /* Si valor_total no representa la posición,
+             calculamos con precio × cantidad cuando procede. */
+
+          if (
+            positionValue === 0 &&
+            price !== 0 &&
+            quantity !== 0
+          ) {
+
+            positionValue =
+              price * quantity;
+
+          }
+
+
+          portfolioTotal +=
+            Number(positionValue || 0);
+
+          totalPosiciones++;
+
+
+          positionsHTML += `
+
+            <div class="position">
+
+              <div class="row mobile-column">
+
+                <div class="column">
+
+                  <div class="name">
+                    ${escapeHTML(product.nombre)}
+                  </div>
+
+                  ${
+                    product.isin
+                    ? `
+                      <div class="muted small">
+                        ISIN:
+                        ${escapeHTML(product.isin)}
+                      </div>
+                    `
+                    : ""
+                  }
+
+                </div>
+
+
+                <div class="column">
+
+                  <div class="amount">
+                    ${euro(positionValue)}
+                  </div>
+
+                  ${
+                    price
+                    ? `
+                      <div class="muted small">
+                        Precio:
+                        ${euro(price)}
+                      </div>
+                    `
+                    : ""
+                  }
+
+                </div>
+
+              </div>
+
+
+              <div class="muted small"
+                   style="margin-top:6px">
+
+                ${number(quantity)}
+                participaciones
+
+                ${
+                  valuationDate
+                  ? ` · Valoración ${valuationDate}`
+                  : ""
+                }
+
+              </div>
+
+            </div>
+
+          `;
+
+        }
+
+
+        totalPatrimonio +=
+          portfolioTotal;
+
+
+        /* ----------------------------------------------------
+           CARTERA
+           ---------------------------------------------------- */
+
+        html += `
+
+          <section class="card">
+
+            <div class="row mobile-column">
+
+              <div class="column">
+
+                <span class="pill">
+                  Cartera
+                </span>
+
+                <h2>
+                  ${escapeHTML(portfolio.nombre)}
+                </h2>
+
+                ${
+                  portfolio.fecha_inicio
+                  ? `
+                    <div class="muted small">
+                      Desde
+                      ${dateES(portfolio.fecha_inicio)}
+                    </div>
+                  `
+                  : ""
+                }
+
+                ${
+                  portfolio.descripcion
+                  ? `
+                    <div class="muted small"
+                         style="margin-top:5px">
+                      ${escapeHTML(
+                        portfolio.descripcion
+                      )}
+                    </div>
+                  `
+                  : ""
+                }
+
+              </div>
+
+
+              <div class="hero-value"
+                   style="color:#172033">
+
+                ${euro(portfolioTotal)}
+
+              </div>
+
+            </div>
+
+
+            <div class="section-title">
+              Posiciones
+            </div>
+
+
+            ${
+              positionsHTML
+              ||
+              `
+                <div class="empty">
+                  Esta cartera no tiene
+                  posiciones activas.
+                </div>
+              `
+            }
+
+          </section>
+
+        `;
+
+      }
+
+
+      /* ------------------------------------------------------
+         RESUMEN PRINCIPAL
+         ------------------------------------------------------ */
+
+      const summary = `
+
+        <section class="card hero">
+
+          <div class="muted">
+            Patrimonio total
+          </div>
+
+          <div class="hero-value">
+            ${euro(totalPatrimonio)}
+          </div>
+
+
+          <div class="summary-grid">
+
+            <div class="summary-box">
+
+              <div class="summary-label">
+                Carteras
+              </div>
+
+              <div class="summary-number">
+                ${portfolios.length}
+              </div>
+
+            </div>
+
+
+            <div class="summary-box">
+
+              <div class="summary-label">
+                Posiciones
+              </div>
+
+              <div class="summary-number">
+                ${totalPosiciones}
+              </div>
+
+            </div>
+
+
+            <div class="summary-box">
+
+              <div class="summary-label">
+                Moneda
+              </div>
+
+              <div class="summary-number">
+                EUR
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+      `;
+
+
+      $("content").innerHTML =
+        summary + html;
+
+
+    } catch (error) {
+
+      console.error(
+        "Error cargando Patrimonio:",
+        error
+      );
+
+
+      $("content").innerHTML = `
+
+        <section class="card">
+
+          <div class="section-title">
+            No se ha podido cargar Patrimonio
+          </div>
+
+          <div class="error">
+            ${escapeHTML(
+              error?.message ||
+              "Error desconocido"
+            )}
+          </div>
+
+          <button
+            class="button"
+            onclick="location.reload()">
+            Reintentar
+          </button>
+
+        </section>
+
+      `;
+
+    }
+
+  }
+
+
+  /* ==========================================================
+     LOGIN
+     ========================================================== */
+
+  $("loginButton").addEventListener(
+    "click",
+    async () => {
+
+      const email =
+        $("email").value.trim();
+
+      const password =
+        $("password").value;
+
+
+      if (!email || !password) {
+
+        $("loginMessage").className =
+          "message error";
+
+        $("loginMessage").textContent =
+          "Introduce el correo electrónico y la contraseña.";
+
+        return;
+
+      }
+
+
+      const button =
+        $("loginButton");
+
+      button.disabled = true;
+
+      button.textContent =
+        "Entrando...";
+
+      $("loginMessage").textContent =
+        "";
+
+
+      try {
+
+        const result =
+          await supabase.auth.signInWithPassword({
+            email,
+            password
+          });
+
+
+        if (result.error) {
+
+          $("loginMessage").className =
+            "message error";
+
+          $("loginMessage").textContent =
+            result.error.message;
+
+          return;
+
+        }
+
+
+        $("loginMessage").className =
+          "message success";
+
+        $("loginMessage").textContent =
+          "";
+
+
+        await loadApp();
+
+
+      } catch (error) {
+
+        $("loginMessage").className =
+          "message error";
+
+        $("loginMessage").textContent =
+          error.message ||
+          "No se ha podido iniciar sesión.";
+
+      } finally {
+
+        button.disabled = false;
+
+        button.textContent =
+          "Entrar";
+
+      }
+
+    }
+  );
+
+
+  /* ==========================================================
+     ENTER PARA INICIAR SESIÓN
+     ========================================================== */
+
+  $("password").addEventListener(
+    "keydown",
+    event => {
+
+      if (event.key === "Enter") {
+
+        $("loginButton").click();
+
+      }
+
+    }
+  );
+
+
+  /* ==========================================================
+     CERRAR SESIÓN
+     ========================================================== */
+
+  $("logoutButton").addEventListener(
+    "click",
+    async () => {
+
+      await supabase.auth.signOut();
+
+      showLogin();
+
+      $("email").value = "";
+      $("password").value = "";
+
+    }
+  );
+
+
+  /* ==========================================================
+     INICIO
+     ========================================================== */
+
+  loadApp();
+
+</script>
+
+</body>
+</html>
