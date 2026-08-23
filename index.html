@@ -1,1142 +1,194 @@
-```
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#173b7a">
-  <meta name="description" content="Patrimonio - Gestión de patrimonio e inversiones">
-  <title>Patrimonio</title>
-
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    :root {
-      --primary: #173b7a;
-      --primary2: #2c64c7;
-      --background: #f4f6fa;
-      --card: #ffffff;
-      --text: #172033;
-      --muted: #687386;
-      --border: #e3e7ee;
-      --positive: #16803c;
-      --negative: #c62828;
-    }
-
-    html,
-    body {
-      margin: 0;
-      min-height: 100%;
-      background: var(--background);
-      color: var(--text);
-      font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        Roboto,
-        Arial,
-        sans-serif;
-    }
-
-    body {
-      padding:
-        env(safe-area-inset-top)
-        0
-        env(safe-area-inset-bottom);
-    }
-
-    button,
-    input {
-      font: inherit;
-    }
-
-    .wrap {
-      width: 100%;
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 20px 16px 50px;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 18px;
-      margin: 14px 0;
-      box-shadow: 0 4px 18px rgba(23, 32, 51, .07);
-    }
-
-    .login {
-      max-width: 430px;
-      margin: 10vh auto 0;
-    }
-
-    .brand {
-      font-size: 30px;
-      font-weight: 800;
-      letter-spacing: -.6px;
-    }
-
-    .subtitle {
-      color: var(--muted);
-      margin: 8px 0 20px;
-    }
-
-    .input {
-      width: 100%;
-      padding: 14px;
-      border-radius: 12px;
-      border: 1px solid #d7dce5;
-      background: white;
-      margin-top: 10px;
-      outline: none;
-    }
-
-    .input:focus {
-      border-color: var(--primary2);
-      box-shadow: 0 0 0 3px rgba(44,100,199,.12);
-    }
-
-    .button {
-      width: 100%;
-      padding: 14px;
-      border: 0;
-      border-radius: 12px;
-      background: var(--primary);
-      color: white;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-
-    .button:disabled {
-      opacity: .6;
-      cursor: default;
-    }
-
-    .button-secondary {
-      background: white;
-      color: var(--primary);
-      border: 1px solid #d7dce5;
-    }
-
-    .top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    .top .button {
-      width: auto;
-      margin: 0;
-      padding: 9px 14px;
-    }
-
-    .hero {
-      background: linear-gradient(135deg, var(--primary), var(--primary2));
-      color: white;
-      border: 0;
-    }
-
-    .hero .muted {
-      color: #dbe7ff;
-    }
-
-    .hero-value {
-      font-size: 36px;
-      font-weight: 800;
-      margin-top: 5px;
-    }
-
-    .section-title {
-      font-size: 20px;
-      font-weight: 800;
-      margin: 22px 0 8px;
-    }
-
-    .row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .column {
-      min-width: 0;
-    }
-
-    .name {
-      font-weight: 700;
-      word-break: break-word;
-    }
-
-    .amount {
-      font-weight: 800;
-      white-space: nowrap;
-    }
-
-    .muted {
-      color: var(--muted);
-    }
-
-    .small {
-      font-size: 13px;
-    }
-
-    .pill {
-      display: inline-block;
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: #edf3ff;
-      color: #2457b8;
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    .position {
-      padding: 15px 0;
-      border-bottom: 1px solid #edf0f4;
-    }
-
-    .position:last-child {
-      border-bottom: 0;
-    }
-
-    .positive {
-      color: var(--positive);
-      font-weight: 700;
-    }
-
-    .negative {
-      color: var(--negative);
-      font-weight: 700;
-    }
-
-    .message {
-      margin-top: 10px;
-      font-size: 14px;
-    }
-
-    .error {
-      color: var(--negative);
-    }
-
-    .success {
-      color: var(--positive);
-    }
-
-    .loading {
-      text-align: center;
-      padding: 30px 10px;
-      color: var(--muted);
-    }
-
-    .empty {
-      color: var(--muted);
-      padding: 12px 0;
-    }
-
-    .footer {
-      text-align: center;
-      color: #8993a4;
-      font-size: 12px;
-      margin-top: 25px;
-    }
-
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-top: 15px;
-    }
-
-    .summary-box {
-      background: rgba(255,255,255,.12);
-      border-radius: 12px;
-      padding: 12px;
-    }
-
-    .summary-label {
-      font-size: 12px;
-      color: #dbe7ff;
-    }
-
-    .summary-number {
-      font-size: 19px;
-      font-weight: 800;
-      margin-top: 3px;
-    }
-
-    .update-bar {
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      margin: 14px 0;
-      flex-wrap:wrap;
-    }
-
-    .update-status {
-      font-size:13px;
-      color:var(--muted);
-      flex:1;
-      min-width:220px;
-    }
-
-    .update-status.success { color:var(--positive); }
-    .update-status.warning { color:#9a6700; }
-    .update-status.error { color:var(--negative); }
-
-    .button-update {
-      min-width:170px;
-      white-space:nowrap;
-    }
-
-    .button-update.loading {
-      opacity:.75;
-      cursor:wait;
-    }
-
-    .update-report {
-      margin:12px 0 18px;
-      border:1px solid var(--border);
-      border-radius:12px;
-      padding:12px 14px;
-      background:var(--card);
-    }
-
-    .update-report ul { margin:8px 0 0 20px; padding:0; }
-    .update-report li { margin:4px 0; }
-
-    @media (max-width: 600px) {
-      .wrap {
-        padding: 15px 12px 40px;
-      }
-
-      .brand {
-        font-size: 27px;
-      }
-
-      .hero-value {
-        font-size: 30px;
-      }
-
-      .summary-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .row.mobile-column {
-        align-items: flex-start;
-        flex-direction: column;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#173b7a">
+<title>Patrimonio</title>
+<style>
+:root{--p:#173b7a;--p2:#2c64c7;--bg:#f4f6fa;--card:#fff;--text:#172033;--muted:#687386;--bd:#e1e6ef;--ok:#16803c;--bad:#c62828;--warn:#9a6700}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}button,input,select{font:inherit}.wrap{max-width:1100px;margin:auto;padding:18px 14px 50px}.hidden{display:none!important}.card{background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:18px;margin:12px 0;box-shadow:0 4px 18px #1720330d}.brand{font-size:28px;font-weight:850}.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.button{border:0;border-radius:12px;padding:11px 15px;background:var(--p);color:#fff;font-weight:750;cursor:pointer}.button.secondary{background:#fff;color:var(--p);border:1px solid var(--bd)}.button.small{padding:8px 11px;font-size:13px}.button.danger{background:var(--bad)}.hero{background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;border:0}.hero .muted{color:#dbe7ff}.heroValue{font-size:38px;font-weight:850;margin:5px 0 15px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.box{padding:14px;border:1px solid var(--bd);border-radius:14px;background:#fff}.hero .box{background:#ffffff18;border-color:#ffffff20}.label{font-size:12px;color:var(--muted)}.hero .label{color:#dbe7ff}.big{font-size:20px;font-weight:800;margin-top:4px}.sectionTitle{font-size:20px;font-weight:850;margin:22px 0 9px}.tabs{display:flex;gap:8px;overflow:auto;padding-bottom:4px}.tab{white-space:nowrap;padding:10px 14px;border:1px solid var(--bd);background:#fff;border-radius:999px;font-weight:750;cursor:pointer}.tab.active{background:var(--p);color:#fff;border-color:var(--p)}.toolbar{display:flex;gap:9px;flex-wrap:wrap;margin:12px 0}.search{flex:1;min-width:220px;padding:12px;border:1px solid var(--bd);border-radius:12px}.list{display:grid;gap:9px}.item{padding:14px;border:1px solid var(--bd);border-radius:14px;background:#fff;cursor:pointer}.item:hover{border-color:#b8c8e8}.row{display:flex;justify-content:space-between;gap:12px;align-items:center}.name{font-weight:800}.muted{color:var(--muted)}.small{font-size:13px}.amount{font-weight:850;white-space:nowrap}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#edf3ff;color:#2457b8;font-size:12px;font-weight:750;margin:2px}.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}.login{max-width:430px;margin:12vh auto}.input,.select{width:100%;padding:12px;border:1px solid var(--bd);border-radius:11px;margin-top:8px;background:#fff}.modalBack{position:fixed;inset:0;background:#0008;display:flex;align-items:center;justify-content:center;padding:15px;z-index:20}.modal{background:#fff;border-radius:18px;max-width:620px;width:100%;max-height:90vh;overflow:auto;padding:20px}.modal h2{margin-top:0}.formGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.formFull{grid-column:1/-1}.close{float:right;background:none;border:0;font-size:25px;cursor:pointer}.source{border:1px solid var(--bd);border-radius:12px;padding:12px;margin:8px 0}.rank{font-weight:850}.empty{text-align:center;padding:25px;color:var(--muted)}.notice{padding:12px;border-radius:12px;background:#fff7df;color:#765400;border:1px solid #eed58b}.footer{text-align:center;color:#8a94a5;font-size:12px;margin-top:25px}@media(max-width:700px){.grid,.grid2{grid-template-columns:1fr}.heroValue{font-size:31px}.formGrid{grid-template-columns:1fr}.formFull{grid-column:auto}.row.mobile{align-items:flex-start;flex-direction:column}}
+</style>
 </head>
-
 <body>
-
 <main class="wrap">
+<section id="login" class="card login">
+  <div class="brand">Patrimonio</div>
+  <p class="muted">Gestión de patrimonio e inversiones</p>
+  <input id="email" class="input" type="email" placeholder="Correo electrónico">
+  <input id="password" class="input" type="password" placeholder="Contraseña">
+  <button id="loginBtn" class="button" style="width:100%;margin-top:10px">Entrar</button>
+  <div id="loginMsg" class="small"></div>
+</section>
 
-  <!-- LOGIN -->
-  <section id="login" class="card login">
-    <div class="brand">Patrimonio</div>
+<section id="app" class="hidden">
+<header class="top">
+  <div><div class="brand">Patrimonio</div><div class="muted small">Tu patrimonio, en un solo lugar</div></div>
+  <button id="logout" class="button secondary">Salir</button>
+</header>
 
-    <p class="subtitle">
-      Gestión de tu patrimonio e inversiones
-    </p>
-
-    <input
-      id="email"
-      class="input"
-      type="email"
-      autocomplete="email"
-      placeholder="Correo electrónico"
-    >
-
-    <input
-      id="password"
-      class="input"
-      type="password"
-      autocomplete="current-password"
-      placeholder="Contraseña"
-    >
-
-    <button id="loginButton" class="button">
-      Entrar
-    </button>
-
-    <div id="loginMessage" class="message"></div>
-  </section>
-
-
-  <!-- APP -->
-  <section id="app" class="hidden">
-
-    <header class="top">
-      <div class="brand">Patrimonio</div>
-
-      <button id="logoutButton" class="button button-secondary">
-        Salir
-      </button>
-    </header>
-
-    <div class="update-bar">
-      <button id="updateButton" class="button button-update">
-        🔄 Actualizar todo
-      </button>
-      <div id="updateStatus" class="update-status">
-        Preparado para actualizar cotizaciones y valoraciones.
-      </div>
-    </div>
-
-    <div id="updateReport" class="update-report hidden"></div>
-
-    <div id="content">
-
-      <div class="loading">
-        Cargando patrimonio...
-      </div>
-
-    </div>
-
-
-    <div class="footer">
-      Patrimonio · conectado a Supabase
-    </div>
-
-  </section>
-
+<div id="main"></div>
+<div class="footer">Patrimonio · conectado a Supabase</div>
+</section>
 </main>
-
+<div id="modalHost"></div>
 
 <script type="module">
+import {createClient} from "https://esm.sh/@supabase/supabase-js@2";
+const supabase=createClient("https://rnwtvkhnhybdgxhmgebw.supabase.co","sb_publishable_r00Qvz_GBmRi4fVj6O7scA_jIj9wuyN");
+const $=id=>document.getElementById(id);
+let state={user:null,products:[],entities:[],types:[],portfolios:[],portfolioComponents:[],quotes:[],vals:[],balances:[],sources:[],productSources:[],view:"resumen",filter:"entidades",search:""};
 
-  import { createClient }
-    from "https://esm.sh/@supabase/supabase-js@2";
-
-
-  /* ==========================================================
-     SUPABASE
-     ========================================================== */
-
-  const SUPABASE_URL =
-    "https://rnwtvkhnhybdgxhmgebw.supabase.co";
-
-  const SUPABASE_KEY =
-    "sb_publishable_r00Qvz_GBmRi4fVj6O7scA_jIj9wuyN";
-
-  const supabase =
-    createClient(SUPABASE_URL, SUPABASE_KEY);
-
-
-  /* ==========================================================
-     ELEMENTOS
-     ========================================================== */
-
-  const $ = id =>
-    document.getElementById(id);
-
-
-  /* ==========================================================
-     FUNCIONES AUXILIARES
-     ========================================================== */
-
-  function euro(value) {
-
-    const number = Number(value || 0);
-
-    return new Intl.NumberFormat("es-ES", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(number);
-
+function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function euro(v){return new Intl.NumberFormat("es-ES",{style:"currency",currency:"EUR"}).format(Number(v||0))}
+function num(v,d=6){return Number(v||0).toLocaleString("es-ES",{maximumFractionDigits:d})}
+function dateES(v){return v?new Date(v+"T00:00:00").toLocaleDateString("es-ES"):""}
+function typeName(id){return state.types.find(x=>x.id===id)?.nombre||"Sin categoría"}
+function isAccount(p){return /cuenta corriente|cuenta de ahorro|cuenta de inversión/i.test(typeName(p.tipo_producto_id))}
+function latest(arr,id){return arr.filter(x=>x.producto_id===id).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)))[0]}
+function productQuantity(id){
+  const ops=state.ops.filter(x=>x.producto_id===id);
+  let q=0;
+  for(const o of ops){
+    const t=(o.tipo_operacion||"").toLowerCase();
+    const n=Number(o.cantidad||0);
+    if(/venta|salida|traspaso salida|reembolso/.test(t)) q-=n; else if(/compra|entrada|traspaso|dividendo/.test(t)) q+=n;
   }
-
-
-  function number(value, decimals = 6) {
-
-    return Number(value || 0).toLocaleString(
-      "es-ES",
-      {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: decimals
-      }
-    );
-
+  return q;
+}
+function valueOf(p){
+  if(isAccount(p)){const b=latest(state.balances,p.id);return Number(b?.saldo||0)}
+  const v=latest(state.vals,p.id);
+  if(v?.valor_total!=null)return Number(v.valor_total||0);
+  const q=latest(state.quotes,p.id);
+  return Number(q?.cierre||0)*Math.max(0,productQuantity(p.id));
+}
+function portfolioValue(id){
+  let total=0;
+  for(const c of state.portfolioComponents.filter(x=>x.cartera_id===id&&x.activo!==false)){
+    const p=state.products.find(p=>p.id===c.producto_id); if(!p) continue;
+    const v=latest(state.vals,p.id), q=latest(state.quotes,p.id);
+    let val=v?.valor_total!=null?Number(v.valor_total):Number(q?.cierre||0)*Number(c.cantidad||0);
+    total+=val;
   }
-
-
-  function dateES(value) {
-
-    if (!value) return "";
-
-    const date =
-      new Date(value + "T00:00:00");
-
-    if (Number.isNaN(date.getTime())) {
-      return "";
-    }
-
-    return date.toLocaleDateString("es-ES");
-
-  }
-
-
-  function escapeHTML(value) {
-
-    return String(value ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-
-  }
-
-
-  function showLogin() {
-
-    $("login").classList.remove("hidden");
-    $("app").classList.add("hidden");
-
-  }
-
-
-  function showApp() {
-
-    $("login").classList.add("hidden");
-    $("app").classList.remove("hidden");
-
-  }
-
-
-  /* ==========================================================
-     ACTUALIZACIÓN Y VALORACIÓN
-     ========================================================== */
-
-  async function actualizarTodo() {
-
-    const button = $("updateButton");
-    const status = $("updateStatus");
-    const report = $("updateReport");
-
-    button.disabled = true;
-    button.classList.add("loading");
-    button.textContent = "⏳ Actualizando...";
-    status.className = "update-status";
-    status.textContent = "Consultando las fuentes configuradas...";
-    report.classList.add("hidden");
-
-    try {
-      const { data, error } = await supabase.functions.invoke("actualizar-cotizaciones", {
-        body: {}
-      });
-
-      if (error) throw error;
-
-      const result = data || {};
-      const resumen = result.resumen || {};
-      const detalles = result.detalles || [];
-
-      const actualizados = Number(resumen.actualizados || 0);
-      const discrepancias = Number(resumen.discrepancias || 0);
-      const sinFuente = Number(resumen.sin_fuente || 0);
-      const errores = Number(resumen.errores || 0);
-
-      status.className = "update-status " + (errores || sinFuente ? "warning" : discrepancias ? "warning" : "success");
-      status.textContent = `Actualización terminada · ${actualizados} valores nuevos · ${discrepancias} discrepancias`;
-
-      const lines = detalles.map(d => {
-        const name = escapeHTML(d.producto || "Producto");
-        if (d.estado === "actualizado") return `<li>✅ <strong>${name}</strong>: ${escapeHTML(d.fecha || "")}</li>`;
-        if (d.estado === "discrepancia") return `<li>⚠️ <strong>${name}</strong>: manual ${escapeHTML(String(d.manual ?? ""))} · automático ${escapeHTML(String(d.automatico ?? ""))}</li>`;
-        if (d.estado === "sin_fuente") return `<li>🟠 <strong>${name}</strong>: fuente configurada pero no disponible para actualización automática.</li>`;
-        if (d.estado === "error") return `<li>❌ <strong>${name}</strong>: ${escapeHTML(d.error || "Error")}</li>`;
-        return `<li>ℹ️ <strong>${name}</strong>: ${escapeHTML(d.mensaje || "Sin cambios")}</li>`;
-      }).join("");
-
-      report.innerHTML = `<strong>Resultado de la actualización</strong><ul>${lines}</ul>`;
-      report.classList.remove("hidden");
-
-      await loadApp();
-
-    } catch (error) {
-      console.error("Error actualizando cotizaciones:", error);
-      status.className = "update-status error";
-      status.textContent = "No se ha podido completar la actualización.";
-      report.innerHTML = `<strong>Error</strong><div class="error" style="margin-top:6px">${escapeHTML(error?.message || "Error desconocido")}</div>`;
-      report.classList.remove("hidden");
-    } finally {
-      button.disabled = false;
-      button.classList.remove("loading");
-      button.textContent = "🔄 Actualizar todo";
-    }
-  }
-
-
-  async function getLatestValue(productId) {
-
-    const [quotesResult, valuationsResult] = await Promise.all([
-      supabase.from("cotizaciones_historicas")
-        .select("fecha,cierre,moneda,fuente_id,observaciones")
-        .eq("producto_id", productId)
-        .order("fecha", { ascending:false })
-        .limit(1)
-        .maybeSingle(),
-      supabase.from("valoraciones_historicas")
-        .select("fecha,precio_unitario,valor_total,origen,fuente,observaciones")
-        .eq("producto_id", productId)
-        .order("fecha", { ascending:false })
-        .limit(1)
-        .maybeSingle()
-    ]);
-
-    if (quotesResult.error) throw quotesResult.error;
-    if (valuationsResult.error) throw valuationsResult.error;
-
-    const q = quotesResult.data;
-    const v = valuationsResult.data;
-
-    if (!q && !v) return null;
-    if (!q) return { kind:"valuation", ...v, price:Number(v.precio_unitario || 0) };
-    if (!v) return { kind:"quote", fecha:q.fecha, price:Number(q.cierre || 0), moneda:q.moneda, fuente:q.fuente_id };
-
-    return q.fecha >= v.fecha
-      ? { kind:"quote", fecha:q.fecha, price:Number(q.cierre || 0), moneda:q.moneda, fuente:q.fuente_id }
-      : { kind:"valuation", ...v, price:Number(v.precio_unitario || 0) };
-  }
-
-
-  /* ==========================================================
-     CARGAR APLICACIÓN
-     ========================================================== */
-
-  async function loadApp() {
-
-    try {
-
-      const sessionResult = await supabase.auth.getSession();
-      const session = sessionResult.data?.session;
-
-      if (!session) {
-        showLogin();
-        return;
-      }
-
-      showApp();
-      $("content").innerHTML = '<div class="loading">Cargando patrimonio...</div>';
-
-      /* ------------------------------------------------------
-         1. CARTERAS
-         ------------------------------------------------------ */
-      const portfoliosResult = await supabase
-        .from("carteras")
-        .select("id,nombre,descripcion,fecha_inicio,moneda")
-        .eq("activa", true)
-        .order("nombre");
-
-      if (portfoliosResult.error) throw portfoliosResult.error;
-
-      const portfolios = portfoliosResult.data || [];
-
-      /* ------------------------------------------------------
-         2. TODOS LOS PRODUCTOS DEL USUARIO
-         La aplicación no debe limitarse a las carteras.
-         ------------------------------------------------------ */
-      const [productsResult, typesResult, entitiesResult] = await Promise.all([
-        supabase
-          .from("productos")
-          .select("id,nombre,isin,ticker,moneda,tipo_producto_id,entidad_financiera_id,activo")
-          .eq("activo", true)
-          .order("nombre"),
-        supabase
-          .from("tipos_productos")
-          .select("id,nombre"),
-        supabase
-          .from("entidades_financieras")
-          .select("id,nombre")
-      ]);
-
-      if (productsResult.error) throw productsResult.error;
-      if (typesResult.error) throw typesResult.error;
-      if (entitiesResult.error) throw entitiesResult.error;
-
-      const products = productsResult.data || [];
-      const typeMap = new Map((typesResult.data || []).map(x => [x.id, x.nombre]));
-      const entityMap = new Map((entitiesResult.data || []).map(x => [x.id, x.nombre]));
-
-      /* ------------------------------------------------------
-         3. COMPONENTES DE LAS CARTERAS
-         Se excluyen después de aquí para no duplicarlos.
-         ------------------------------------------------------ */
-      const componentRows = [];
-      for (const portfolio of portfolios) {
-        const r = await supabase
-          .from("cartera_componentes")
-          .select("id,producto_id,cantidad,activo")
-          .eq("cartera_id", portfolio.id)
-          .eq("activo", true);
-
-        if (r.error) throw r.error;
-
-        for (const component of (r.data || [])) {
-          componentRows.push({
-            ...component,
-            cartera_id: portfolio.id
-          });
-        }
-      }
-
-      const componentProductIds = new Set(componentRows.map(x => x.producto_id));
-
-      /* ------------------------------------------------------
-         4. OPERACIONES
-         Se utilizan para conocer la posición de productos
-         independientes cuando no existe una valoración con
-         cantidad/valor total.
-         ------------------------------------------------------ */
-      const operationsResult = await supabase
-        .from("operaciones")
-        .select("id,producto_id,fecha,tipo_operacion,cantidad,precio_unitario,observaciones,created_at")
-        .order("fecha", { ascending: true })
-        .order("created_at", { ascending: true });
-
-      if (operationsResult.error) throw operationsResult.error;
-
-      const operationsByProduct = new Map();
-      for (const op of (operationsResult.data || [])) {
-        if (!operationsByProduct.has(op.producto_id)) operationsByProduct.set(op.producto_id, []);
-        operationsByProduct.get(op.producto_id).push(op);
-      }
-
-      /* ------------------------------------------------------
-         5. ÚLTIMA VALORACIÓN / COTIZACIÓN DE CADA PRODUCTO
-         ------------------------------------------------------ */
-      async function getLatestValueCached(productId) {
-        return await getLatestValue(productId);
-      }
-
-      function currentQuantity(product, latestValue) {
-        const ops = operationsByProduct.get(product.id) || [];
-
-        if (latestValue?.kind === "valuation" && latestValue.cantidad !== null && latestValue.cantidad !== undefined) {
-          const q = Number(latestValue.cantidad);
-          if (Number.isFinite(q)) return q;
-        }
-
-        if (!ops.length) return 1;
-
-        const type = typeMap.get(product.tipo_producto_id) || "";
-
-        /* Fondos de Bankinter y otros fondos independientes:
-           compras - ventas. */
-        if (type === "Fondos de inversión") {
-          let q = 0;
-          for (const op of ops) {
-            const qty = Math.abs(Number(op.cantidad || 0));
-            const t = String(op.tipo_operacion || "").toLowerCase();
-            if (t === "compra" || t === "aportacion" || t === "entrada") q += qty;
-            else if (t === "venta" || t === "retiro" || t === "salida") q -= qty;
-            else if (t.includes("traspaso") && Number(op.cantidad || 0) < 0) q -= qty;
-            else if (t.includes("traspaso") && Number(op.cantidad || 0) > 0) q += qty;
-          }
-          return Math.max(0, q);
-        }
-
-        /* Acciones: muchas operaciones de dividendos contienen la
-           cantidad de acciones que había en ese momento. Las usamos
-           como fotografía de posición. Los splits/traspasos pueden
-           modificarla explícitamente. */
-        if (type === "Acciones") {
-          let q = 0;
-          for (const op of ops) {
-            const t = String(op.tipo_operacion || "").toLowerCase();
-            const qty = Number(op.cantidad || 0);
-
-            if (t === "compra") q += Math.abs(qty);
-            else if (t === "venta") q -= Math.abs(qty);
-            else if (t.includes("dividendo") || t.includes("acciones liberadas")) {
-              if (qty > 0 && (t.includes("efectivo") || t.includes("acciones") || t.includes("liberadas"))) q = qty;
-            } else if (t === "split") {
-              const m = String(op.observaciones || "").match(/pasan?\s+a\s+([0-9.,]+)/i);
-              if (m) q = Number(m[1].replace(/\./g, "").replace(",", "."));
-            } else if (t.includes("traspaso")) {
-              if (qty < 0) q = Math.max(0, q - Math.abs(qty));
-              else if (qty > 0) q += qty;
-            }
-          }
-          return Math.max(0, q);
-        }
-
-        /* Otros productos con operaciones. */
-        let q = 0;
-        for (const op of ops) {
-          const qty = Math.abs(Number(op.cantidad || 0));
-          const t = String(op.tipo_operacion || "").toLowerCase();
-          if (t === "compra" || t === "aportacion" || t === "entrada") q += qty;
-          else if (t === "venta" || t === "retiro" || t === "salida") q -= qty;
-          else if (t.includes("traspaso")) q += Number(op.cantidad || 0);
-        }
-        return Math.max(0, q);
-      }
-
-      let totalPatrimonio = 0;
-      let totalPosiciones = 0;
-      let html = "";
-
-      /* ======================================================
-         CARTERAS
-         ====================================================== */
-      for (const portfolio of portfolios) {
-        const components = componentRows.filter(x => x.cartera_id === portfolio.id);
-        let portfolioTotal = 0;
-        let positionsHTML = "";
-
-        for (const component of components) {
-          const product = products.find(p => p.id === component.producto_id);
-          if (!product) continue;
-
-          const latestValue = await getLatestValueCached(product.id);
-          const quantity = Number(component.cantidad || 0);
-          const price = Number(latestValue?.price || 0);
-          let positionValue = 0;
-
-          if (latestValue?.kind === "valuation" && latestValue.valor_total !== null && latestValue.valor_total !== undefined) {
-            positionValue = Number(latestValue.valor_total || 0);
-          } else if (price && quantity) {
-            positionValue = price * quantity;
-          }
-
-          portfolioTotal += positionValue;
-          totalPosiciones++;
-
-          positionsHTML += renderPosition(product, quantity, price, positionValue, latestValue);
-        }
-
-        totalPatrimonio += portfolioTotal;
-
-        html += `
-          <section class="card">
-            <div class="row mobile-column">
-              <div class="column">
-                <span class="pill">Cartera</span>
-                <h2>${escapeHTML(portfolio.nombre)}</h2>
-                ${portfolio.fecha_inicio ? `<div class="muted small">Desde ${dateES(portfolio.fecha_inicio)}</div>` : ""}
-                ${portfolio.descripcion ? `<div class="muted small" style="margin-top:5px">${escapeHTML(portfolio.descripcion)}</div>` : ""}
-              </div>
-              <div class="hero-value" style="color:#172033">${euro(portfolioTotal)}</div>
-            </div>
-            <div class="section-title">Posiciones</div>
-            ${positionsHTML || `<div class="empty">Esta cartera no tiene posiciones activas.</div>`}
-          </section>
-        `;
-      }
-
-      /* ======================================================
-         PRODUCTOS INDEPENDIENTES
-         ====================================================== */
-      const independentProducts = products.filter(p => !componentProductIds.has(p.id));
-      const groups = new Map();
-
-      for (const product of independentProducts) {
-        const type = typeMap.get(product.tipo_producto_id) || "Otros";
-        if (!groups.has(type)) groups.set(type, []);
-        groups.get(type).push(product);
-      }
-
-      const typeOrder = [
-        "Cuentas corrientes",
-        "Cuenta corriente",
-        "Cuentas de ahorro",
-        "Cuenta de ahorro",
-        "Cuenta de inversión",
-        "Acciones",
-        "Fondos de inversión",
-        "Planes de pensiones"
-      ];
-
-      const orderedGroups = [...groups.entries()].sort((a,b) => {
-        const ia = typeOrder.indexOf(a[0]);
-        const ib = typeOrder.indexOf(b[0]);
-        return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib) || a[0].localeCompare(b[0], "es");
-      });
-
-      for (const [type, groupProducts] of orderedGroups) {
-        let groupHTML = "";
-        let groupTotal = 0;
-        let visibleCount = 0;
-
-        for (const product of groupProducts) {
-          const latestValue = await getLatestValueCached(product.id);
-          const ops = operationsByProduct.get(product.id) || [];
-          const quantity = currentQuantity(product, latestValue);
-          const price = Number(latestValue?.price || 0);
-
-          let positionValue = 0;
-          if (latestValue?.kind === "valuation" && latestValue.valor_total !== null && latestValue.valor_total !== undefined) {
-            positionValue = Number(latestValue.valor_total || 0);
-          } else if (price && quantity) {
-            positionValue = price * quantity;
-          }
-
-          /* Para cuentas, el valor total de la última valoración es
-             el saldo, aunque no exista una cantidad. */
-          if ((type.includes("Cuenta")) && latestValue?.valor_total !== null && latestValue?.valor_total !== undefined) {
-            positionValue = Number(latestValue.valor_total || 0);
-          }
-
-          const hasData = latestValue || ops.length > 0 || quantity > 0;
-          if (!hasData) continue;
-
-          groupTotal += positionValue;
-          totalPatrimonio += positionValue;
-          totalPosiciones++;
-          visibleCount++;
-
-          const entity = entityMap.get(product.entidad_financiera_id) || "";
-          groupHTML += renderPosition(product, quantity, price, positionValue, latestValue, entity, type);
-        }
-
-        if (!visibleCount) continue;
-
-        html += `
-          <section class="card">
-            <div class="row mobile-column">
-              <div class="column">
-                <span class="pill">${escapeHTML(type)}</span>
-                <h2>${escapeHTML(type)}</h2>
-              </div>
-              <div class="hero-value" style="color:#172033">${euro(groupTotal)}</div>
-            </div>
-            <div class="section-title">Productos</div>
-            ${groupHTML}
-          </section>
-        `;
-      }
-
-      /* ------------------------------------------------------
-         RESUMEN PRINCIPAL
-         ------------------------------------------------------ */
-      const summary = `
-        <section class="card hero">
-          <div class="muted">Patrimonio total</div>
-          <div class="hero-value">${euro(totalPatrimonio)}</div>
-          <div class="summary-grid">
-            <div class="summary-box">
-              <div class="summary-label">Carteras</div>
-              <div class="summary-number">${portfolios.length}</div>
-            </div>
-            <div class="summary-box">
-              <div class="summary-label">Posiciones</div>
-              <div class="summary-number">${totalPosiciones}</div>
-            </div>
-            <div class="summary-box">
-              <div class="summary-label">Productos</div>
-              <div class="summary-number">${independentProducts.length + componentProductIds.size}</div>
-            </div>
-          </div>
-        </section>
-      `;
-
-      $("content").innerHTML = summary + html;
-
-    } catch (error) {
-      console.error("Error cargando Patrimonio:", error);
-      $("content").innerHTML = `
-        <section class="card">
-          <div class="section-title">No se ha podido cargar Patrimonio</div>
-          <div class="error">${escapeHTML(error?.message || "Error desconocido")}</div>
-          <button class="button" onclick="location.reload()">Reintentar</button>
-        </section>
-      `;
-    }
-
-  }
-
-
-  function renderPosition(product, quantity, price, positionValue, latestValue, entity = "", type = "") {
-    const valuationDate = latestValue?.fecha ? dateES(latestValue.fecha) : "";
-    const source = latestValue?.fuente || latestValue?.fuente_id || "";
-
-    return `
-      <div class="position">
-        <div class="row mobile-column">
-          <div class="column">
-            <div class="name">${escapeHTML(product.nombre)}</div>
-            ${entity ? `<div class="muted small">Entidad: ${escapeHTML(entity)}</div>` : ""}
-            ${product.isin ? `<div class="muted small">ISIN: ${escapeHTML(product.isin)}</div>` : ""}
-            ${product.ticker ? `<div class="muted small">Ticker: ${escapeHTML(product.ticker)}</div>` : ""}
-          </div>
-          <div class="column">
-            <div class="amount">${euro(positionValue)}</div>
-            ${price ? `<div class="muted small">Precio: ${euro(price)}</div>` : ""}
-          </div>
-        </div>
-        <div class="muted small" style="margin-top:6px">
-          ${quantity > 0 ? `${number(quantity)} ${type.includes("Cuenta") ? "unidad" : "participaciones"}` : "Sin posición cuantificada"}
-          ${valuationDate ? ` · Valoración ${valuationDate}` : ""}
-          ${source ? ` · Fuente: ${escapeHTML(source)}` : ""}
-        </div>
-      </div>
-    `;
-  }
-
-  /* ==========================================================
-     LOGIN
-     ========================================================== */
-
-  $("loginButton").addEventListener(
-    "click",
-    async () => {
-
-      const email =
-        $("email").value.trim();
-
-      const password =
-        $("password").value;
-
-
-      if (!email || !password) {
-
-        $("loginMessage").className =
-          "message error";
-
-        $("loginMessage").textContent =
-          "Introduce el correo electrónico y la contraseña.";
-
-        return;
-
-      }
-
-
-      const button =
-        $("loginButton");
-
-      button.disabled = true;
-
-      button.textContent =
-        "Entrando...";
-
-      $("loginMessage").textContent =
-        "";
-
-
-      try {
-
-        const result =
-          await supabase.auth.signInWithPassword({
-            email,
-            password
-          });
-
-
-        if (result.error) {
-
-          $("loginMessage").className =
-            "message error";
-
-          $("loginMessage").textContent =
-            result.error.message;
-
-          return;
-
-        }
-
-
-        $("loginMessage").className =
-          "message success";
-
-        $("loginMessage").textContent =
-          "";
-
-
-        await loadApp();
-
-
-      } catch (error) {
-
-        $("loginMessage").className =
-          "message error";
-
-        $("loginMessage").textContent =
-          error.message ||
-          "No se ha podido iniciar sesión.";
-
-      } finally {
-
-        button.disabled = false;
-
-        button.textContent =
-          "Entrar";
-
-      }
-
-    }
-  );
-
-
-  /* ==========================================================
-     ENTER PARA INICIAR SESIÓN
-     ========================================================== */
-
-  $("password").addEventListener(
-    "keydown",
-    event => {
-
-      if (event.key === "Enter") {
-
-        $("loginButton").click();
-
-      }
-
-    }
-  );
-
-
-  /* ==========================================================
-     ACTUALIZAR TODO
-     ========================================================== */
-
-  $("updateButton").addEventListener("click", actualizarTodo);
-
-
-  /* ==========================================================
-     CERRAR SESIÓN
-     ========================================================== */
-
-  $("logoutButton").addEventListener(
-    "click",
-    async () => {
-
-      await supabase.auth.signOut();
-
-      showLogin();
-
-      $("email").value = "";
-      $("password").value = "";
-
-    }
-  );
-
-
-  /* ==========================================================
-     INICIO
-     ========================================================== */
-
-  loadApp();
-
+  return total;
+}
+function productInPortfolio(id){return state.portfolioComponents.some(c=>c.producto_id===id&&c.activo!==false)}
+function totalPatrimonio(){return state.products.filter(p=>!productInPortfolio(p.id)).reduce((s,p)=>s+valueOf(p),0)+state.portfolios.reduce((s,c)=>s+portfolioValue(c.id),0)}
+function modal(html){$("modalHost").innerHTML=`<div class="modalBack" id="back"><div class="modal"><button class="close" onclick="closeModal()">×</button>${html}</div></div>`}
+window.closeModal=()=>{$("modalHost").innerHTML=""};
+
+async function load(){
+  const sess=(await supabase.auth.getSession()).data.session;
+  if(!sess){$("login").classList.remove("hidden");$("app").classList.add("hidden");return}
+  state.user=sess.user;$("login").classList.add("hidden");$("app").classList.remove("hidden");
+  const uid=sess.user.id;
+  const [p,e,t,car,cc,q,v,b,s,ps,ops]=await Promise.all([
+    supabase.from("productos").select("*").eq("user_id",uid).eq("activo",true).order("nombre"),
+    supabase.from("entidades_financieras").select("*").eq("user_id",uid).eq("activo",true).order("nombre"),
+    supabase.from("tipos_productos").select("*").eq("activo",true).order("nombre"),
+    supabase.from("carteras").select("*").eq("user_id",uid).eq("activa",true).order("nombre"),
+    supabase.from("cartera_componentes").select("*").eq("user_id",uid).eq("activo",true),
+    supabase.from("cotizaciones_historicas").select("*").eq("user_id",uid).order("fecha",{ascending:false}),
+    supabase.from("valoraciones_historicas").select("*").eq("user_id",uid).order("fecha",{ascending:false}),
+    supabase.from("v_saldos_historicos").select("*").eq("user_id",uid).order("fecha",{ascending:false}),
+    supabase.from("fuentes_valoracion").select("*").eq("activa",true).order("puntuacion",{ascending:false}),
+    supabase.from("productos_fuentes").select("*"),
+    supabase.from("operaciones").select("*").eq("user_id",uid).order("fecha",{ascending:false})
+  ]);
+  for(const r of [p,e,t,car,cc,q,v,b,s,ps,ops])if(r.error)throw r.error;
+  Object.assign(state,{products:p.data||[],entities:e.data||[],types:t.data||[],portfolios:car.data||[],portfolioComponents:cc.data||[],quotes:q.data||[],vals:v.data||[],balances:b.data||[],sources:s.data||[],productSources:ps.data||[],ops:ops.data||[]});
+  render();
+}
+
+function shell(active="resumen"){
+  const tabs=[["resumen","🏠 Resumen"],["entidades","🏦 Entidades"],["categorias","📊 Categorías"],["biblioteca","📚 Biblioteca"],["fuentes","🌐 Fuentes"]];
+  return `<div class="tabs">${tabs.map(([k,l])=>`<button class="tab ${active===k?"active":""}" onclick="go('${k}')">${l}</button>`).join("")}</div>`;
+}
+window.go=k=>{state.view=k;render()};
+
+function render(){
+ const total=totalPatrimonio();
+ let body=shell(state.view);
+ if(state.view==="resumen")body+=renderResumen(total);
+ if(state.view==="entidades")body+=renderEntities();
+ if(state.view==="categorias")body+=renderCategories();
+ if(state.view==="biblioteca")body+=renderLibrary();
+ if(state.view==="fuentes")body+=renderSources();
+ $("main").innerHTML=body;
+}
+function renderResumen(total){
+ const accounts=state.products.filter(isAccount).reduce((s,p)=>s+valueOf(p),0);
+ const investments=total-accounts;
+ const gains=state.products.reduce((s,p)=>s+(Number(valueOf(p))-state.ops.filter(o=>o.producto_id===p.id).reduce((x,o)=>x+Number(o.importe_neto||0),0)),0);
+ return `<section class="card hero"><div class="muted">Patrimonio total</div><div class="heroValue">${euro(total)}</div>
+ <div class="grid"><div class="box"><div class="label">Cuentas</div><div class="big">${euro(accounts)}</div></div><div class="box"><div class="label">Inversiones</div><div class="big">${euro(investments)}</div></div><div class="box"><div class="label">Productos</div><div class="big">${state.products.length}</div></div></div></section>
+ <div class="toolbar"><button class="button" onclick="updateAll()">🔄 Actualizar todo</button><button class="button secondary" onclick="openProduct()">＋ Nuevo producto</button><button class="button secondary" onclick="openEntity()">＋ Nueva entidad</button><input class="search" placeholder="🔎 Buscar producto, ISIN o entidad" value="${esc(state.search)}" oninput="state.search=this.value;renderSearch(this.value)"></div>
+ <div id="searchResults"></div>
+ <section class="card"><div class="sectionTitle">¿Cómo quieres ver tu patrimonio?</div><div class="grid2"><div class="item" onclick="go('entidades')"><div class="name">🏦 Por entidades</div><div class="muted small">CaixaBank, Bankinter, MyInvestor...</div></div><div class="item" onclick="go('categorias')"><div class="name">📊 Por categorías</div><div class="muted small">Acciones, fondos, planes, cuentas...</div></div></div></section>
+ <section class="card"><div class="sectionTitle">Alertas y estado</div>${state.products.filter(p=>!isAccount(p)&&!state.productSources.some(x=>x.producto_id===p.id)).map(p=>`<div class="notice">⚠️ ${esc(p.nombre)} no tiene fuentes asociadas.</div>`).join("")||`<div class="ok">✓ No se han detectado productos sin fuentes asociadas en esta vista.</div>`}</section>`;
+}
+window.renderSearch=(q)=>{const el=$("searchResults");if(!el)return;const s=q.trim().toLowerCase();if(!s){el.innerHTML="";return}const ps=state.products.filter(p=>(p.nombre+" "+(p.isin||"")+" "+(p.ticker||"")).toLowerCase().includes(s));const es=state.entities.filter(e=>e.nombre.toLowerCase().includes(s));el.innerHTML=`<section class="card"><div class="sectionTitle">Resultados</div>${ps.map(p=>productItem(p)).join("")}${es.map(e=>`<div class="item" onclick="showEntity('${e.id}')"><div class="name">🏦 ${esc(e.nombre)}</div><div class="muted small">Entidad financiera</div></div>`).join("")||(!ps.length?"<div class='empty'>Sin resultados</div>":"")}</section>`};
+
+function productItem(p){
+ const src=state.productSources.filter(x=>x.producto_id===p.id).sort((a,b)=>a.prioridad-b.prioridad)[0];
+ const f=state.sources.find(x=>x.id===src?.fuente_id);
+ return `<div class="item" onclick="showProduct('${p.id}')"><div class="row mobile"><div><div class="name">${esc(p.nombre)}</div><div>${p.isin?`<span class="pill">ISIN ${esc(p.isin)}</span>`:""}${p.ticker?`<span class="pill">${esc(p.ticker)}</span>`:""}<span class="pill">${esc(typeName(p.tipo_producto_id))}</span></div><div class="muted small">${esc(state.entities.find(e=>e.id===p.entidad_financiera_id)?.nombre||"")}</div></div><div class="amount">${euro(valueOf(p))}</div></div>${f?`<div class="muted small">🥇 ${esc(f.nombre)} · prioridad ${src.prioridad}</div>`:""}</div>`;
+}
+function renderEntities(){
+ return `<section class="card"><div class="row"><div><div class="sectionTitle">Entidades</div><div class="muted">Todo lo que tienes en cada entidad.</div></div><button class="button small" onclick="openEntity()">＋ Nueva</button></div><div class="list">${state.entities.map(e=>{const ps=state.products.filter(p=>p.entidad_financiera_id===e.id&&!productInPortfolio(p.id));const val=ps.reduce((s,p)=>s+valueOf(p),0);return `<div class="item" onclick="showEntity('${e.id}')"><div class="row"><div><div class="name">🏦 ${esc(e.nombre)}</div><div class="muted small">${ps.length} productos</div></div><div class="amount">${euro(val)}</div></div></div>`}).join("")}</div></section>`;
+}
+window.showEntity=id=>{const e=state.entities.find(x=>x.id===id);if(!e)return;const ps=state.products.filter(p=>p.entidad_financiera_id===id);modal(`<h2>${esc(e.nombre)}</h2><div class="muted">Productos y cuentas de esta entidad</div><div class="list" style="margin-top:12px">${ps.map(productItem).join("")||"<div class='empty'>Sin productos</div>"}</div><button class="button" onclick="closeModal();openProduct('${id}')">＋ Añadir producto</button>`)}
+function renderCategories(){
+ const groups={};state.products.filter(p=>!productInPortfolio(p.id)).forEach(p=>(groups[typeName(p.tipo_producto_id)]??=[]).push(p));
+ return `<section class="card"><div class="sectionTitle">Categorías</div><div class="muted">Puedes ver el patrimonio por tipo de producto.</div></section>${Object.entries(groups).map(([k,ps])=>`<section class="card"><div class="row"><div><div class="name">${esc(k)}</div><div class="muted small">${ps.length} productos</div></div><div class="amount">${euro(ps.reduce((s,p)=>s+valueOf(p),0))}</div></div><div class="list" style="margin-top:10px">${ps.map(productItem).join("")}</div></section>`).join("")}`;
+}
+function renderLibrary(){
+ const masters=state.masterProducts||[];
+ return `<section class="card"><div class="row"><div><div class="sectionTitle">Biblioteca general de Patrimonio</div><div class="muted">Identidad global del producto. Aquí no se guardan cotizaciones ni valoraciones.</div></div><button class="button small" onclick="openProduct()">＋ Añadir</button></div><div class="notice" style="margin-top:12px">La biblioteca global contiene nombre, ISIN, ticker, tipo, moneda y demás identificadores. Las cotizaciones pertenecen al histórico del producto y las posiciones pertenecen al usuario.</div><div class="toolbar"><input class="search" id="libSearch" placeholder="Buscar por nombre, ISIN o ticker" oninput="renderLibraryList(this.value)"></div><div id="libraryList"></div></section>`;
+}
+async function renderLibraryList(q=""){
+ const r=await supabase.from("productos_maestros").select("*").eq("activo",true).order("nombre"); if(r.error)return;
+ state.masterProducts=r.data||[];const s=q.toLowerCase();const arr=state.masterProducts.filter(p=>(p.nombre+" "+(p.isin||"")+" "+(p.ticker||"")).toLowerCase().includes(s));
+ $("libraryList").innerHTML=`<div class="list">${arr.map(p=>`<div class="item"><div class="row mobile"><div><div class="name">${esc(p.nombre)}</div><div>${p.isin?`<span class="pill">ISIN ${esc(p.isin)}</span>`:""}${p.ticker?`<span class="pill">${esc(p.ticker)}</span>`:""}<span class="pill">${esc(typeName(p.tipo_producto_id))}</span></div><div class="muted small">${esc(p.moneda||"EUR")} · ${p.verificado?"Verificado":"Pendiente de verificación"}</div></div></div></div>`).join("")||"<div class='empty'>No hay resultados</div>"}</div>`;
+}
+function renderSources(){
+ return `<section class="card"><div class="sectionTitle">Biblioteca de fuentes de cotización</div><div class="muted">Fuentes comunes para todos los usuarios. Se ordenan por calidad y prioridad por producto.</div><div class="list" style="margin-top:12px">${state.sources.map(f=>`<div class="item"><div class="row mobile"><div><div class="name">${esc(f.nombre)}</div><div class="muted small">${esc(f.tipo_fuente||"")} · ${f.gratuita?"Gratuita":"De pago"} · ${f.ofrece_cotizacion_eod?"EOD":""} ${f.ofrece_historico?"· Histórico":""}</div></div><div class="amount">${Number(f.puntuacion||0).toFixed(1)}/10</div></div></div>`).join("")}</div></section>`;
+}
+async function showProduct(id){
+ const p=state.products.find(x=>x.id===id);if(!p)return;
+ const srcs=state.productSources.filter(x=>x.producto_id===id).sort((a,b)=>a.prioridad-b.prioridad);
+ const sources=srcs.map(s=>state.sources.find(f=>f.id===s.fuente_id)).filter(Boolean);
+ const q=latest(state.quotes,id),v=latest(state.vals,id),b=latest(state.balances,id);
+ modal(`<h2>${esc(p.nombre)}</h2><div>${p.isin?`<span class="pill">ISIN ${esc(p.isin)}</span>`:""}${p.ticker?`<span class="pill">${esc(p.ticker)}</span>`:""}<span class="pill">${esc(typeName(p.tipo_producto_id))}</span></div><div class="grid2" style="margin-top:12px"><div class="box"><div class="label">Valor actual</div><div class="big">${euro(valueOf(p))}</div></div><div class="box"><div class="label">Último dato</div><div class="big">${dateES(v?.fecha||q?.fecha||b?.fecha)||"—"}</div></div></div><div class="sectionTitle">Fuentes</div>${sources.map((f,i)=>`<div class="source"><span class="rank">${i===0?"🥇":i===1?"🥈":"🥉"} ${esc(f.nombre)}</span><div class="muted small">Puntuación ${Number(f.puntuacion||0).toFixed(1)}/10 · ${f.frecuencia_actualizacion||"frecuencia no indicada"} · ${f.retraso_minutos??"?"} min retraso</div></div>`).join("")||"<div class='notice'>Este producto todavía no tiene fuentes asociadas.</div>"}<div class="toolbar"><button class="button" onclick="closeModal();openProduct('${p.entidad_financiera_id}','${p.id}')">✏️ Editar</button><button class="button secondary" onclick="closeModal();openQuote('${p.id}')">＋ Cotización manual</button><button class="button secondary" onclick="closeModal();openOperation('${p.id}')">＋ Operación</button></div>`);
+}
+window.showProduct=showProduct;
+
+window.openEntity=async function(){
+ modal(`<h2>Nueva entidad</h2><form id="entityForm"><label>Nombre<input class="input" name="nombre" required></label><label>Tipo<select class="select" name="tipo"><option>Banco</option><option>Gestora</option><option>Broker</option><option>Financiera</option><option>Otra</option></select></label><button class="button" style="margin-top:14px;width:100%">Guardar</button></form>`);
+ $("entityForm").onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.target);const name=fd.get("nombre").trim();const g=await supabase.rpc("registrar_entidad_global",{p_nombre:name,p_tipo:fd.get("tipo")});if(g.error){alert(g.error.message);return}const ins=await supabase.from("entidades_financieras").insert({user_id:state.user.id,nombre:name,tipo:fd.get("tipo"),activo:true}).select().single();if(ins.error){alert(ins.error.message);return}closeModal();await load()};
+}
+window.openProduct=async function(entityId="",id=""){
+ const p=id?state.products.find(x=>x.id===id):null;
+ const types=state.types.filter(t=>!["Cuenta corriente","Cuenta de ahorro","Cuenta de inversión"].includes(t.nombre));
+ const entityOptions=state.entities.map(e=>`<option value="${e.id}" ${p?.entidad_financiera_id===e.id||entityId===e.id?"selected":""}>${esc(e.nombre)}</option>`).join("");
+ modal(`<h2>${p?"Editar producto":"Nuevo producto"}</h2><form id="productForm"><div class="formGrid"><label>Nombre<input class="input" name="nombre" value="${esc(p?.nombre||"")}" required></label><label>Tipo<select class="select" name="tipo" required>${types.map(t=>`<option value="${t.id}" ${p?.tipo_producto_id===t.id?"selected":""}>${esc(t.nombre)}</option>`).join("")}</select></label><label>ISIN<input class="input" name="isin" value="${esc(p?.isin||"")}"></label><label>Ticker<input class="input" name="ticker" value="${esc(p?.ticker||"")}"></label><label>Moneda<input class="input" name="moneda" value="${esc(p?.moneda||"EUR")}"></label><label>Entidad<select class="select" name="entidad" required>${entityOptions}</select></label></div><div class="notice" style="margin-top:12px">Al crear un producto cotizable, Patrimonio lo incorpora a la biblioteca global. Las cotizaciones no se guardan en la ficha global.</div><button class="button" style="margin-top:14px;width:100%">Guardar</button></form>`);
+ $("productForm").onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.target);const data={nombre:fd.get("nombre").trim(),tipo_producto_id:fd.get("tipo"),isin:fd.get("isin").trim()||null,ticker:fd.get("ticker").trim()||null,moneda:fd.get("moneda").trim()||"EUR",entidad_financiera_id:fd.get("entidad"),user_id:state.user.id,activo:true};if(p){const r=await supabase.from("productos").update(data).eq("id",p.id);if(r.error){alert(r.error.message);return}}else{const g=await supabase.rpc("registrar_producto_global",{p_nombre:data.nombre,p_tipo_producto_id:data.tipo_producto_id,p_isin:data.isin,p_ticker:data.ticker,p_moneda:data.moneda});if(g.error){alert(g.error.message);return}data.producto_maestro_id=g.data;const r=await supabase.from("productos").insert(data);if(r.error){alert(r.error.message);return}}closeModal();await load()};
+}
+window.openQuote=function(id){
+ const p=state.products.find(x=>x.id===id);modal(`<h2>Cotización / valoración manual</h2><div class="muted">${esc(p.nombre)}</div><form id="quoteForm"><div class="formGrid"><label>Fecha<input class="input" type="date" name="fecha" required></label><label>Valor unitario<input class="input" type="number" step="0.000001" name="valor" required></label><label class="formFull">Observaciones<textarea class="input" name="obs"></textarea></label></div><button class="button" style="margin-top:14px;width:100%">Guardar</button></form>`);
+ $("quoteForm").onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.target);const r=await supabase.from("valoraciones_historicas").insert({user_id:state.user.id,producto_id:id,fecha:fd.get("fecha"),precio_unitario:Number(fd.get("valor")),cantidad:productQuantity(id),valor_total:Number(fd.get("valor"))*Math.max(0,productQuantity(id)),moneda:p.moneda||"EUR",origen:"manual",fuente:"Histórico manual del usuario",observaciones:fd.get("obs")||null});if(r.error){alert(r.error.message);return}closeModal();await load()};
+}
+window.openOperation=function(id){
+ const p=state.products.find(x=>x.id===id);modal(`<h2>Nueva operación</h2><div class="muted">${esc(p.nombre)}</div><form id="opForm"><div class="formGrid"><label>Fecha<input class="input" type="date" name="fecha" required></label><label>Tipo<select class="select" name="tipo"><option>Compra</option><option>Venta</option><option>Traspaso</option><option>Dividendo</option><option>Otro</option></select></label><label>Cantidad<input class="input" type="number" step="0.000001" name="cantidad"></label><label>Precio unitario<input class="input" type="number" step="0.000001" name="precio"></label><label>Gastos<input class="input" type="number" step="0.01" name="gastos" value="0"></label><label>Impuestos<input class="input" type="number" step="0.01" name="impuestos" value="0"></label><label class="formFull">Observaciones<textarea class="input" name="obs"></textarea></label></div><button class="button" style="margin-top:14px;width:100%">Guardar operación</button></form>`);
+ $("opForm").onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.target);const qty=Number(fd.get("cantidad")||0),price=Number(fd.get("precio")||0),g=Number(fd.get("gastos")||0),im=Number(fd.get("impuestos")||0);const r=await supabase.from("operaciones").insert({user_id:state.user.id,producto_id:id,fecha:fd.get("fecha"),tipo_operacion:fd.get("tipo"),cantidad:qty,precio_unitario:price,gastos:g,impuestos:im,moneda:p.moneda||"EUR",importe_bruto:qty*price,importe_neto:qty*price+g+im,observaciones:fd.get("obs")||null});if(r.error){alert(r.error.message);return}closeModal();await load()};
+}
+window.updateAll=async function(){const btn=document.querySelector('.button');try{const r=await supabase.functions.invoke("actualizar-cotizaciones",{body:{}});if(r.error)throw r.error;alert("Actualización terminada. Se recargará el patrimonio.");await load()}catch(e){alert("La actualización no se ha podido completar: "+e.message)}};
+
+$("loginBtn").onclick=async()=>{const email=$("email").value.trim(),password=$("password").value;if(!email||!password){$("loginMsg").textContent="Introduce correo y contraseña.";return}const r=await supabase.auth.signInWithPassword({email,password});if(r.error){$("loginMsg").textContent=r.error.message;return}load()};
+$("password").onkeydown=e=>{if(e.key==="Enter")$("loginBtn").click()};
+$("logout").onclick=async()=>{await supabase.auth.signOut();load()};
+load().catch(e=>{console.error(e);$("loginMsg").textContent=e.message});
 </script>
-
 </body>
 </html>
-```
