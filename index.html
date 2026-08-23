@@ -1,194 +1,151 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#173b7a">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Patrimonio</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--p:#173b7a;--p2:#2c64c7;--bg:#f4f6fa;--card:#fff;--text:#172033;--muted:#687386;--bd:#e1e6ef;--ok:#16803c;--bad:#c62828;--warn:#9a6700}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}button,input,select{font:inherit}.wrap{max-width:1100px;margin:auto;padding:18px 14px 50px}.hidden{display:none!important}.card{background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:18px;margin:12px 0;box-shadow:0 4px 18px #1720330d}.brand{font-size:28px;font-weight:850}.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.button{border:0;border-radius:12px;padding:11px 15px;background:var(--p);color:#fff;font-weight:750;cursor:pointer}.button.secondary{background:#fff;color:var(--p);border:1px solid var(--bd)}.button.small{padding:8px 11px;font-size:13px}.button.danger{background:var(--bad)}.hero{background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;border:0}.hero .muted{color:#dbe7ff}.heroValue{font-size:38px;font-weight:850;margin:5px 0 15px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.box{padding:14px;border:1px solid var(--bd);border-radius:14px;background:#fff}.hero .box{background:#ffffff18;border-color:#ffffff20}.label{font-size:12px;color:var(--muted)}.hero .label{color:#dbe7ff}.big{font-size:20px;font-weight:800;margin-top:4px}.sectionTitle{font-size:20px;font-weight:850;margin:22px 0 9px}.tabs{display:flex;gap:8px;overflow:auto;padding-bottom:4px}.tab{white-space:nowrap;padding:10px 14px;border:1px solid var(--bd);background:#fff;border-radius:999px;font-weight:750;cursor:pointer}.tab.active{background:var(--p);color:#fff;border-color:var(--p)}.toolbar{display:flex;gap:9px;flex-wrap:wrap;margin:12px 0}.search{flex:1;min-width:220px;padding:12px;border:1px solid var(--bd);border-radius:12px}.list{display:grid;gap:9px}.item{padding:14px;border:1px solid var(--bd);border-radius:14px;background:#fff;cursor:pointer}.item:hover{border-color:#b8c8e8}.row{display:flex;justify-content:space-between;gap:12px;align-items:center}.name{font-weight:800}.muted{color:var(--muted)}.small{font-size:13px}.amount{font-weight:850;white-space:nowrap}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#edf3ff;color:#2457b8;font-size:12px;font-weight:750;margin:2px}.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}.login{max-width:430px;margin:12vh auto}.input,.select{width:100%;padding:12px;border:1px solid var(--bd);border-radius:11px;margin-top:8px;background:#fff}.modalBack{position:fixed;inset:0;background:#0008;display:flex;align-items:center;justify-content:center;padding:15px;z-index:20}.modal{background:#fff;border-radius:18px;max-width:620px;width:100%;max-height:90vh;overflow:auto;padding:20px}.modal h2{margin-top:0}.formGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.formFull{grid-column:1/-1}.close{float:right;background:none;border:0;font-size:25px;cursor:pointer}.source{border:1px solid var(--bd);border-radius:12px;padding:12px;margin:8px 0}.rank{font-weight:850}.empty{text-align:center;padding:25px;color:var(--muted)}.notice{padding:12px;border-radius:12px;background:#fff7df;color:#765400;border:1px solid #eed58b}.footer{text-align:center;color:#8a94a5;font-size:12px;margin-top:25px}@media(max-width:700px){.grid,.grid2{grid-template-columns:1fr}.heroValue{font-size:31px}.formGrid{grid-template-columns:1fr}.formFull{grid-column:auto}.row.mobile{align-items:flex-start;flex-direction:column}}
+:root{--blue:#214889;--blue2:#2e65c5;--bg:#f4f6fb;--card:#fff;--text:#14213d;--muted:#71809b;--line:#dfe5ef;--green:#198754;--red:#c0392b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;color:var(--text)}
+.wrap{max-width:1380px;margin:auto;padding:24px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px}.brand h1{margin:0;font-size:34px}.brand p{margin:4px 0;color:var(--muted)}
+button,.tab,input,select{font:inherit}.btn{border:0;border-radius:12px;padding:12px 17px;font-weight:700;cursor:pointer;background:var(--blue);color:white}.btn.secondary{background:white;color:var(--blue);border:1px solid var(--line)}.btn.danger{background:#fff0ef;color:var(--red)}
+.tabs{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}.tab{border:1px solid var(--line);background:#fff;border-radius:28px;padding:12px 18px;font-weight:800;cursor:pointer}.tab.active{background:var(--blue);color:#fff}
+.hero{background:linear-gradient(135deg,#204784,#3269c9);color:#fff;border-radius:22px;padding:28px;margin-bottom:18px}.hero small{opacity:.85}.total{font-size:48px;font-weight:900;margin:5px 0 20px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.stat{background:rgba(255,255,255,.14);padding:15px;border-radius:14px}.stat b{display:block;font-size:22px;margin-top:5px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin:15px 0}.search{flex:1;min-width:260px;padding:13px 16px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 5px 18px rgba(20,33,61,.04)}.card h2,.card h3{margin-top:0}
+.product{display:flex;justify-content:space-between;gap:18px;padding:15px 0;border-top:1px solid var(--line);cursor:pointer}.product:first-child{border-top:0}.product .name{font-weight:850}.meta{color:var(--muted);font-size:13px;margin-top:4px}.value{font-weight:900;font-size:19px;white-space:nowrap}
+.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#edf3ff;color:#2459b0;font-size:12px;font-weight:800;margin:2px}
+.section{margin-top:20px}.section-title{display:flex;justify-content:space-between;align-items:end;margin-bottom:10px}.section-title h2{margin:0}.muted{color:var(--muted)}
+.row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}.bar{height:10px;background:#e8edf5;border-radius:99px;overflow:hidden;margin-top:8px}.bar i{display:block;height:100%;background:#3269c9}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line);font-size:14px}th{color:var(--muted)}
+.modal{position:fixed;inset:0;background:rgba(10,20,40,.5);display:none;align-items:center;justify-content:center;padding:20px;z-index:20}.modal.open{display:flex}.modalbox{background:#fff;border-radius:18px;max-width:900px;width:100%;max-height:90vh;overflow:auto;padding:22px}
+.form{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.form label{font-weight:700;font-size:13px}.form input,.form select{width:100%;margin-top:5px;padding:11px;border:1px solid var(--line);border-radius:10px}.form .full{grid-column:1/-1}
+.notice{padding:14px;border-radius:12px;background:#fff7df;color:#765c13;margin:12px 0}.error{background:#fff0ef;color:#9c2c20}.empty{text-align:center;padding:35px;color:var(--muted)}
+.login{max-width:420px;margin:100px auto}.login h1{margin-top:0}
+@media(max-width:850px){.stats,.grid{grid-template-columns:1fr 1fr}.product{display:block}.value{margin-top:8px}.form{grid-template-columns:1fr}}
+@media(max-width:560px){.wrap{padding:14px}.stats,.grid{grid-template-columns:1fr}.total{font-size:38px}}
 </style>
 </head>
 <body>
-<main class="wrap">
-<section id="login" class="card login">
-  <div class="brand">Patrimonio</div>
-  <p class="muted">Gestión de patrimonio e inversiones</p>
-  <input id="email" class="input" type="email" placeholder="Correo electrónico">
-  <input id="password" class="input" type="password" placeholder="Contraseña">
-  <button id="loginBtn" class="button" style="width:100%;margin-top:10px">Entrar</button>
-  <div id="loginMsg" class="small"></div>
-</section>
+<div id="app"></div>
+<div id="modal" class="modal"><div class="modalbox"><div id="modalContent"></div></div></div>
+<script>
+const SUPABASE_URL="https://rnwtvkhnhybdgxhmgebw.supabase.co";
+const SUPABASE_KEY="sb_publishable_r00Qvz_GBmRi4fVj6O7scA_jIj9wuyN";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let state={user:null,products:[],entities:[],types:[],sources:[],masterEntities:[],masterProducts:[],masterProductSources:[],ops:[],valuations:[],quotes:[],tab:"resumen",search:""};
 
-<section id="app" class="hidden">
-<header class="top">
-  <div><div class="brand">Patrimonio</div><div class="muted small">Tu patrimonio, en un solo lugar</div></div>
-  <button id="logout" class="button secondary">Salir</button>
-</header>
-
-<div id="main"></div>
-<div class="footer">Patrimonio · conectado a Supabase</div>
-</section>
-</main>
-<div id="modalHost"></div>
-
-<script type="module">
-import {createClient} from "https://esm.sh/@supabase/supabase-js@2";
-const supabase=createClient("https://rnwtvkhnhybdgxhmgebw.supabase.co","sb_publishable_r00Qvz_GBmRi4fVj6O7scA_jIj9wuyN");
-const $=id=>document.getElementById(id);
-let state={user:null,products:[],entities:[],types:[],portfolios:[],portfolioComponents:[],quotes:[],vals:[],balances:[],sources:[],productSources:[],view:"resumen",filter:"entidades",search:""};
-
-function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
-function euro(v){return new Intl.NumberFormat("es-ES",{style:"currency",currency:"EUR"}).format(Number(v||0))}
-function num(v,d=6){return Number(v||0).toLocaleString("es-ES",{maximumFractionDigits:d})}
-function dateES(v){return v?new Date(v+"T00:00:00").toLocaleDateString("es-ES"):""}
-function typeName(id){return state.types.find(x=>x.id===id)?.nombre||"Sin categoría"}
-function isAccount(p){return /cuenta corriente|cuenta de ahorro|cuenta de inversión/i.test(typeName(p.tipo_producto_id))}
-function latest(arr,id){return arr.filter(x=>x.producto_id===id).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)))[0]}
-function productQuantity(id){
-  const ops=state.ops.filter(x=>x.producto_id===id);
-  let q=0;
-  for(const o of ops){
-    const t=(o.tipo_operacion||"").toLowerCase();
-    const n=Number(o.cantidad||0);
-    if(/venta|salida|traspaso salida|reembolso/.test(t)) q-=n; else if(/compra|entrada|traspaso|dividendo/.test(t)) q+=n;
-  }
-  return q;
+const money=n=>new Intl.NumberFormat("es-ES",{style:"currency",currency:"EUR"}).format(Number(n)||0);
+const dateES=d=>d?new Intl.DateTimeFormat("es-ES").format(new Date(d+"T00:00:00")):"—";
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+function typeOrder(t){let x=state.types.find(a=>a.id===t);return x?.orden_presentacion??999}
+function opSign(o){let t=(o.tipo_operacion||"").toLowerCase();return /venta|retirada|salida/.test(t)?-1:1}
+function qtyFor(pid){return state.ops.filter(o=>o.producto_id===pid).reduce((s,o)=>s+opSign(o)*Number(o.cantidad||0),0)}
+function latest(arr,key){let m={};for(const x of arr){if(!m[x[key]]||String(x.fecha)>String(m[x[key]].fecha))m[x[key]]=x}return m}
+function latestVal(pid){return latest(state.valuations,"producto_id")[pid]}
+function latestQuote(pid){return latest(state.quotes,"producto_id")[pid]}
+function productValue(p){
+  const v=latestVal(p.id);
+  if(v && v.valor_total!=null && Number(v.valor_total)!==0)return Number(v.valor_total);
+  const q=latestQuote(p.id), qty=qtyFor(p.id);
+  if(q && q.cierre!=null && qty)return Number(q.cierre)*qty*Number(q.factor_conversion||1);
+  if(v && v.valor_total!=null)return Number(v.valor_total);
+  return 0;
 }
-function valueOf(p){
-  if(isAccount(p)){const b=latest(state.balances,p.id);return Number(b?.saldo||0)}
-  const v=latest(state.vals,p.id);
-  if(v?.valor_total!=null)return Number(v.valor_total||0);
-  const q=latest(state.quotes,p.id);
-  return Number(q?.cierre||0)*Math.max(0,productQuantity(p.id));
+function totalValue(){return state.products.reduce((s,p)=>s+productValue(p),0)}
+function typeName(p){return state.types.find(t=>t.id===p.tipo_producto_id)?.nombre||"Sin categoría"}
+function entityName(p){return state.entities.find(e=>e.id===p.entidad_financiera_id)?.nombre||"Sin entidad"}
+function groupedByType(){
+ const g={}; [...state.products].sort((a,b)=>typeOrder(a.tipo_producto_id)-typeOrder(b.tipo_producto_id)||a.nombre.localeCompare(b.nombre,"es")).forEach(p=>{let k=typeName(p);(g[k]??=[]).push(p)});return g;
 }
-function portfolioValue(id){
-  let total=0;
-  for(const c of state.portfolioComponents.filter(x=>x.cartera_id===id&&x.activo!==false)){
-    const p=state.products.find(p=>p.id===c.producto_id); if(!p) continue;
-    const v=latest(state.vals,p.id), q=latest(state.quotes,p.id);
-    let val=v?.valor_total!=null?Number(v.valor_total):Number(q?.cierre||0)*Number(c.cantidad||0);
-    total+=val;
-  }
-  return total;
+function groupedByEntity(){
+ const g={}; [...state.products].sort((a,b)=>entityName(a).localeCompare(entityName(b),"es")||typeOrder(a.tipo_producto_id)-typeOrder(b.tipo_producto_id)||a.nombre.localeCompare(b.nombre,"es")).forEach(p=>{let k=entityName(p);(g[k]??=[]).push(p)});return g;
 }
-function productInPortfolio(id){return state.portfolioComponents.some(c=>c.producto_id===id&&c.activo!==false)}
-function totalPatrimonio(){return state.products.filter(p=>!productInPortfolio(p.id)).reduce((s,p)=>s+valueOf(p),0)+state.portfolios.reduce((s,c)=>s+portfolioValue(c.id),0)}
-function modal(html){$("modalHost").innerHTML=`<div class="modalBack" id="back"><div class="modal"><button class="close" onclick="closeModal()">×</button>${html}</div></div>`}
-window.closeModal=()=>{$("modalHost").innerHTML=""};
 
 async function load(){
-  const sess=(await supabase.auth.getSession()).data.session;
-  if(!sess){$("login").classList.remove("hidden");$("app").classList.add("hidden");return}
-  state.user=sess.user;$("login").classList.add("hidden");$("app").classList.remove("hidden");
-  const uid=sess.user.id;
-  const [p,e,t,car,cc,q,v,b,s,ps,ops]=await Promise.all([
-    supabase.from("productos").select("*").eq("user_id",uid).eq("activo",true).order("nombre"),
-    supabase.from("entidades_financieras").select("*").eq("user_id",uid).eq("activo",true).order("nombre"),
-    supabase.from("tipos_productos").select("*").eq("activo",true).order("nombre"),
-    supabase.from("carteras").select("*").eq("user_id",uid).eq("activa",true).order("nombre"),
-    supabase.from("cartera_componentes").select("*").eq("user_id",uid).eq("activo",true),
-    supabase.from("cotizaciones_historicas").select("*").eq("user_id",uid).order("fecha",{ascending:false}),
-    supabase.from("valoraciones_historicas").select("*").eq("user_id",uid).order("fecha",{ascending:false}),
-    supabase.from("v_saldos_historicos").select("*").eq("user_id",uid).order("fecha",{ascending:false}),
-    supabase.from("fuentes_valoracion").select("*").eq("activa",true).order("puntuacion",{ascending:false}),
-    supabase.from("productos_fuentes").select("*"),
-    supabase.from("operaciones").select("*").eq("user_id",uid).order("fecha",{ascending:false})
-  ]);
-  for(const r of [p,e,t,car,cc,q,v,b,s,ps,ops])if(r.error)throw r.error;
-  Object.assign(state,{products:p.data||[],entities:e.data||[],types:t.data||[],portfolios:car.data||[],portfolioComponents:cc.data||[],quotes:q.data||[],vals:v.data||[],balances:b.data||[],sources:s.data||[],productSources:ps.data||[],ops:ops.data||[]});
-  render();
+ const {data:{user},error:ae}=await db.auth.getUser(); if(ae)throw ae;
+ state.user=user;
+ if(!user){renderLogin();return}
+ const uid=user.id;
+ const results=await Promise.all([
+  db.from("productos").select("*").eq("user_id",uid),
+  db.from("entidades_financieras").select("*").eq("user_id",uid),
+  db.from("tipos_productos").select("*").eq("activo",true).order("orden_presentacion"),
+  db.from("fuentes_valoracion").select("*").order("puntuacion",{ascending:false}),
+  db.from("entidades_maestras").select("*").eq("activo",true).order("nombre"),
+  db.from("productos_maestros").select("*").eq("activo",true).order("nombre"),
+  db.from("productos_maestros_fuentes").select("*"),
+  db.from("operaciones").select("*").eq("user_id",uid).order("fecha"),
+  db.from("valoraciones_historicas").select("*").eq("user_id",uid).order("fecha"),
+  db.from("cotizaciones_historicas").select("*").eq("user_id",uid).order("fecha")
+ ]);
+ const names=["products","entities","types","sources","masterEntities","masterProducts","masterProductSources","ops","valuations","quotes"];
+ for(let i=0;i<results.length;i++){if(results[i].error)throw results[i].error;state[names[i]]=results[i].data||[]}
+ render();
 }
-
-function shell(active="resumen"){
-  const tabs=[["resumen","🏠 Resumen"],["entidades","🏦 Entidades"],["categorias","📊 Categorías"],["biblioteca","📚 Biblioteca"],["fuentes","🌐 Fuentes"]];
-  return `<div class="tabs">${tabs.map(([k,l])=>`<button class="tab ${active===k?"active":""}" onclick="go('${k}')">${l}</button>`).join("")}</div>`;
+function renderLogin(){
+ document.getElementById("app").innerHTML=`<div class="login card"><h1>Patrimonio</h1><p class="muted">Accede a tu patrimonio.</p><div class="form"><label class="full">Email<input id="email" type="email"></label><label class="full">Contraseña<input id="password" type="password"></label></div><br><button class="btn" onclick="login()">Entrar</button><p id="loginMsg"></p></div>`;
 }
-window.go=k=>{state.view=k;render()};
-
+async function login(){const e=document.getElementById("email").value,p=document.getElementById("password").value;const {error}=await db.auth.signInWithPassword({email:e,password:p});if(error)document.getElementById("loginMsg").innerHTML='<span class="error">'+esc(error.message)+'</span>';else load()}
+async function logout(){await db.auth.signOut();load()}
 function render(){
- const total=totalPatrimonio();
- let body=shell(state.view);
- if(state.view==="resumen")body+=renderResumen(total);
- if(state.view==="entidades")body+=renderEntities();
- if(state.view==="categorias")body+=renderCategories();
- if(state.view==="biblioteca")body+=renderLibrary();
- if(state.view==="fuentes")body+=renderSources();
- $("main").innerHTML=body;
+ const t=totalValue(), cats=groupedByType(), ents=groupedByEntity();
+ document.getElementById("app").innerHTML=`<div class="wrap">
+ <div class="top"><div class="brand"><h1>Patrimonio</h1><p>Tu patrimonio, en un solo lugar</p></div><button class="btn secondary" onclick="logout()">Salir</button></div>
+ <div class="tabs">
+ ${tab("resumen","🏠 Resumen")}${tab("entidades","🏛️ Entidades")}${tab("categorias","📊 Categorías")}${tab("biblioteca","📚 Biblioteca")}${tab("fuentes","🌐 Fuentes")}
+ </div>
+ ${state.tab==="resumen"?summary(t,cats,ents):state.tab==="entidades"?entitiesView(ents):state.tab==="categorias"?categoriesView(cats):state.tab==="biblioteca"?libraryView():sourcesView()}
+ </div>`;
 }
-function renderResumen(total){
- const accounts=state.products.filter(isAccount).reduce((s,p)=>s+valueOf(p),0);
- const investments=total-accounts;
- const gains=state.products.reduce((s,p)=>s+(Number(valueOf(p))-state.ops.filter(o=>o.producto_id===p.id).reduce((x,o)=>x+Number(o.importe_neto||0),0)),0);
- return `<section class="card hero"><div class="muted">Patrimonio total</div><div class="heroValue">${euro(total)}</div>
- <div class="grid"><div class="box"><div class="label">Cuentas</div><div class="big">${euro(accounts)}</div></div><div class="box"><div class="label">Inversiones</div><div class="big">${euro(investments)}</div></div><div class="box"><div class="label">Productos</div><div class="big">${state.products.length}</div></div></div></section>
- <div class="toolbar"><button class="button" onclick="updateAll()">🔄 Actualizar todo</button><button class="button secondary" onclick="openProduct()">＋ Nuevo producto</button><button class="button secondary" onclick="openEntity()">＋ Nueva entidad</button><input class="search" placeholder="🔎 Buscar producto, ISIN o entidad" value="${esc(state.search)}" oninput="state.search=this.value;renderSearch(this.value)"></div>
- <div id="searchResults"></div>
- <section class="card"><div class="sectionTitle">¿Cómo quieres ver tu patrimonio?</div><div class="grid2"><div class="item" onclick="go('entidades')"><div class="name">🏦 Por entidades</div><div class="muted small">CaixaBank, Bankinter, MyInvestor...</div></div><div class="item" onclick="go('categorias')"><div class="name">📊 Por categorías</div><div class="muted small">Acciones, fondos, planes, cuentas...</div></div></div></section>
- <section class="card"><div class="sectionTitle">Alertas y estado</div>${state.products.filter(p=>!isAccount(p)&&!state.productSources.some(x=>x.producto_id===p.id)).map(p=>`<div class="notice">⚠️ ${esc(p.nombre)} no tiene fuentes asociadas.</div>`).join("")||`<div class="ok">✓ No se han detectado productos sin fuentes asociadas en esta vista.</div>`}</section>`;
+function tab(k,label){return `<button class="tab ${state.tab===k?"active":""}" onclick="state.tab='${k}';render()">${label}</button>`}
+function summary(t,cats,ents){
+ const vals=Object.entries(cats).map(([k,ps])=>[k,ps.reduce((s,p)=>s+productValue(p),0)]).sort((a,b)=>b[1]-a[1]);
+ const max=vals[0]?.[1]||1;
+ return `<div class="hero"><small>Patrimonio total</small><div class="total">${money(t)}</div><div class="stats">
+ <div class="stat">Cuentas<b>${money(sumTypes(["Cuenta corriente","Cuenta de ahorro","Cuenta de inversión"]))}</b></div>
+ <div class="stat">Inversiones<b>${money(t-sumTypes(["Cuenta corriente","Cuenta de ahorro","Cuenta de inversión"]))}</b></div>
+ <div class="stat">Productos<b>${state.products.length}</b></div><div class="stat">Entidades<b>${Object.keys(ents).length}</b></div></div></div>
+ <div class="actions"><button class="btn" onclick="refresh()">🔄 Actualizar todo</button><button class="btn secondary" onclick="newProduct()">＋ Nuevo producto</button><button class="btn secondary" onclick="newEntity()">＋ Nueva entidad</button><input class="search" placeholder="🔎 Buscar producto, ISIN o entidad" value="${esc(state.search)}" oninput="state.search=this.value;render()"></div>
+ <div class="grid"><div class="card"><div class="section-title"><h2>Distribución</h2></div>${vals.map(([k,v])=>`<div class="row"><span>${esc(k)}</span><b>${money(v)}</b><div class="bar" style="width:100%"><i style="width:${Math.max(1,v/max*100)}%"></i></div></div>`).join("")||empty()}</div>
+ <div class="card"><div class="section-title"><h2>Estado</h2></div><p>El cálculo usa <b>una sola valoración actual por producto</b> o, si no existe, la última cotización multiplicada por la posición.</p><p class="muted">Los históricos no se suman entre sí. Esto evita inflar el patrimonio.</p><div class="notice">BBVA está reconstruido desde operaciones y actualmente debe resultar en <b>221 acciones</b>.</div></div></div>
+ <div class="section card"><div class="section-title"><h2>Patrimonio por entidades</h2><button class="btn secondary" onclick="state.tab='entidades';render()">Ver todo</button></div>${Object.entries(ents).sort((a,b)=>a[0].localeCompare(b[0],"es")).slice(0,8).map(([e,ps])=>`<div class="row"><span>${esc(e)}</span><b>${money(ps.reduce((s,p)=>s+productValue(p),0))}</b></div>`).join("")}</div>
+ <div class="section card"><div class="section-title"><h2>Dashboard</h2></div><p class="muted">Resumen visual por categorías y entidades. Los gráficos se generan desde los datos actuales de Supabase, sin sumar históricos.</p></div>`;
 }
-window.renderSearch=(q)=>{const el=$("searchResults");if(!el)return;const s=q.trim().toLowerCase();if(!s){el.innerHTML="";return}const ps=state.products.filter(p=>(p.nombre+" "+(p.isin||"")+" "+(p.ticker||"")).toLowerCase().includes(s));const es=state.entities.filter(e=>e.nombre.toLowerCase().includes(s));el.innerHTML=`<section class="card"><div class="sectionTitle">Resultados</div>${ps.map(p=>productItem(p)).join("")}${es.map(e=>`<div class="item" onclick="showEntity('${e.id}')"><div class="name">🏦 ${esc(e.nombre)}</div><div class="muted small">Entidad financiera</div></div>`).join("")||(!ps.length?"<div class='empty'>Sin resultados</div>":"")}</section>`};
-
-function productItem(p){
- const src=state.productSources.filter(x=>x.producto_id===p.id).sort((a,b)=>a.prioridad-b.prioridad)[0];
- const f=state.sources.find(x=>x.id===src?.fuente_id);
- return `<div class="item" onclick="showProduct('${p.id}')"><div class="row mobile"><div><div class="name">${esc(p.nombre)}</div><div>${p.isin?`<span class="pill">ISIN ${esc(p.isin)}</span>`:""}${p.ticker?`<span class="pill">${esc(p.ticker)}</span>`:""}<span class="pill">${esc(typeName(p.tipo_producto_id))}</span></div><div class="muted small">${esc(state.entities.find(e=>e.id===p.entidad_financiera_id)?.nombre||"")}</div></div><div class="amount">${euro(valueOf(p))}</div></div>${f?`<div class="muted small">🥇 ${esc(f.nombre)} · prioridad ${src.prioridad}</div>`:""}</div>`;
+function sumTypes(names){return state.products.filter(p=>names.includes(typeName(p))).reduce((s,p)=>s+productValue(p),0)}
+function filterProducts(ps){let q=state.search.trim().toLowerCase();return !q?ps:ps.filter(p=>(p.nombre+" "+(p.isin||"")+" "+(p.ticker||"")+" "+entityName(p)).toLowerCase().includes(q))}
+function entitiesView(g){
+ return `<div class="card"><div class="section-title"><h2>Entidades</h2><button class="btn secondary" onclick="newEntity()">＋ Nueva entidad</button></div>${Object.entries(g).sort((a,b)=>a[0].localeCompare(b[0],"es")).map(([e,ps])=>`<div class="section"><h3>${esc(e)} <span class="muted">· ${money(ps.reduce((s,p)=>s+productValue(p),0))}</span></h3>${filterProducts(ps).map(productCard).join("")||empty()}</div>`).join("")||empty()}</div>`;
 }
-function renderEntities(){
- return `<section class="card"><div class="row"><div><div class="sectionTitle">Entidades</div><div class="muted">Todo lo que tienes en cada entidad.</div></div><button class="button small" onclick="openEntity()">＋ Nueva</button></div><div class="list">${state.entities.map(e=>{const ps=state.products.filter(p=>p.entidad_financiera_id===e.id&&!productInPortfolio(p.id));const val=ps.reduce((s,p)=>s+valueOf(p),0);return `<div class="item" onclick="showEntity('${e.id}')"><div class="row"><div><div class="name">🏦 ${esc(e.nombre)}</div><div class="muted small">${ps.length} productos</div></div><div class="amount">${euro(val)}</div></div></div>`}).join("")}</div></section>`;
+function categoriesView(g){
+ return `<div class="card"><div class="section-title"><h2>Productos por categoría</h2></div>${Object.entries(g).map(([k,ps])=>`<div class="section"><h3>${esc(k)} <span class="muted">· ${money(ps.reduce((s,p)=>s+productValue(p),0))}</span></h3>${filterProducts(ps).map(productCard).join("")||empty()}</div>`).join("")}</div>`;
 }
-window.showEntity=id=>{const e=state.entities.find(x=>x.id===id);if(!e)return;const ps=state.products.filter(p=>p.entidad_financiera_id===id);modal(`<h2>${esc(e.nombre)}</h2><div class="muted">Productos y cuentas de esta entidad</div><div class="list" style="margin-top:12px">${ps.map(productItem).join("")||"<div class='empty'>Sin productos</div>"}</div><button class="button" onclick="closeModal();openProduct('${id}')">＋ Añadir producto</button>`)}
-function renderCategories(){
- const groups={};state.products.filter(p=>!productInPortfolio(p.id)).forEach(p=>(groups[typeName(p.tipo_producto_id)]??=[]).push(p));
- return `<section class="card"><div class="sectionTitle">Categorías</div><div class="muted">Puedes ver el patrimonio por tipo de producto.</div></section>${Object.entries(groups).map(([k,ps])=>`<section class="card"><div class="row"><div><div class="name">${esc(k)}</div><div class="muted small">${ps.length} productos</div></div><div class="amount">${euro(ps.reduce((s,p)=>s+valueOf(p),0))}</div></div><div class="list" style="margin-top:10px">${ps.map(productItem).join("")}</div></section>`).join("")}`;
+function productCard(p){
+ const q=qtyFor(p.id), v=productValue(p), lv=latestQuote(p.id);
+ return `<div class="product" onclick="openProduct('${p.id}')"><div><div class="name">${esc(p.nombre)}</div><span class="badge">${esc(typeName(p))}</span>${p.isin?`<span class="badge">ISIN ${esc(p.isin)}</span>`:""}${p.ticker?`<span class="badge">${esc(p.ticker)}</span>`:""}<div class="meta">${esc(entityName(p))}${lv?` · última cotización ${dateES(lv.fecha)}`:""}</div></div><div class="value">${money(v)}<div class="meta">${q?esc(q.toLocaleString("es-ES",{maximumFractionDigits:8}))+" títulos":""}</div></div></div>`;
 }
-function renderLibrary(){
- const masters=state.masterProducts||[];
- return `<section class="card"><div class="row"><div><div class="sectionTitle">Biblioteca general de Patrimonio</div><div class="muted">Identidad global del producto. Aquí no se guardan cotizaciones ni valoraciones.</div></div><button class="button small" onclick="openProduct()">＋ Añadir</button></div><div class="notice" style="margin-top:12px">La biblioteca global contiene nombre, ISIN, ticker, tipo, moneda y demás identificadores. Las cotizaciones pertenecen al histórico del producto y las posiciones pertenecen al usuario.</div><div class="toolbar"><input class="search" id="libSearch" placeholder="Buscar por nombre, ISIN o ticker" oninput="renderLibraryList(this.value)"></div><div id="libraryList"></div></section>`;
+function libraryView(){
+ return `<div class="grid"><div class="card"><div class="section-title"><h2>Entidades globales</h2></div>${state.masterEntities.map(e=>`<div class="row"><span><b>${esc(e.nombre)}</b><br><small class="muted">${esc(e.tipo||"")}${e.nif?" · "+esc(e.nif):""}</small></span>${e.verificado?"<span class='badge'>Verificada</span>":""}</div>`).join("")||empty()}</div><div class="card"><div class="section-title"><h2>Productos globales</h2></div>${state.masterProducts.map(p=>`<div class="row"><span><b>${esc(p.nombre)}</b><br><small class="muted">${esc(p.isin||"")}${p.ticker?" · "+esc(p.ticker):""}</small></span><span class="badge">${esc(state.types.find(t=>t.id===p.tipo_producto_id)?.nombre||"")}</span></div>`).join("")||empty()}</div></div>`;
 }
-async function renderLibraryList(q=""){
- const r=await supabase.from("productos_maestros").select("*").eq("activo",true).order("nombre"); if(r.error)return;
- state.masterProducts=r.data||[];const s=q.toLowerCase();const arr=state.masterProducts.filter(p=>(p.nombre+" "+(p.isin||"")+" "+(p.ticker||"")).toLowerCase().includes(s));
- $("libraryList").innerHTML=`<div class="list">${arr.map(p=>`<div class="item"><div class="row mobile"><div><div class="name">${esc(p.nombre)}</div><div>${p.isin?`<span class="pill">ISIN ${esc(p.isin)}</span>`:""}${p.ticker?`<span class="pill">${esc(p.ticker)}</span>`:""}<span class="pill">${esc(typeName(p.tipo_producto_id))}</span></div><div class="muted small">${esc(p.moneda||"EUR")} · ${p.verificado?"Verificado":"Pendiente de verificación"}</div></div></div></div>`).join("")||"<div class='empty'>No hay resultados</div>"}</div>`;
+function sourcesView(){
+ return `<div class="card"><div class="section-title"><h2>Fuentes de cotización</h2><span class="muted">${state.sources.length} fuentes</span></div>${state.sources.map(s=>`<div class="row"><span><b>${esc(s.nombre)}</b><br><small class="muted">${esc(s.tipo_fuente||"")} · ${s.tiempo_real?"Tiempo real":"Fin de día"} · ${s.gratuita?"Gratis":"De pago"}</small></span><b>${s.puntuacion??"—"}</b></div>`).join("")||empty()}</div>`;
 }
-function renderSources(){
- return `<section class="card"><div class="sectionTitle">Biblioteca de fuentes de cotización</div><div class="muted">Fuentes comunes para todos los usuarios. Se ordenan por calidad y prioridad por producto.</div><div class="list" style="margin-top:12px">${state.sources.map(f=>`<div class="item"><div class="row mobile"><div><div class="name">${esc(f.nombre)}</div><div class="muted small">${esc(f.tipo_fuente||"")} · ${f.gratuita?"Gratuita":"De pago"} · ${f.ofrece_cotizacion_eod?"EOD":""} ${f.ofrece_historico?"· Histórico":""}</div></div><div class="amount">${Number(f.puntuacion||0).toFixed(1)}/10</div></div></div>`).join("")}</div></section>`;
+function empty(){return `<div class="empty">No hay datos para mostrar.</div>`}
+function openProduct(id){
+ const p=state.products.find(x=>x.id===id), ops=state.ops.filter(o=>o.producto_id===id).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
+ const q=qtyFor(id), v=productValue(p), lq=latestQuote(id), lv=latestVal(id);
+ document.getElementById("modalContent").innerHTML=`<div class="top"><div><h2>${esc(p.nombre)}</h2><div class="meta">${esc(entityName(p))} · ${esc(typeName(p))}</div></div><button class="btn secondary" onclick="closeModal()">Cerrar</button></div><p><span class="badge">Posición ${q.toLocaleString("es-ES",{maximumFractionDigits:8})}</span> <span class="badge">Valor ${money(v)}</span></p>${p.isin?`<p>ISIN: <b>${esc(p.isin)}</b></p>`:""}${p.ticker?`<p>Ticker: <b>${esc(p.ticker)}</b></p>`:""}<h3>Operaciones</h3><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Títulos</th><th>Precio</th></tr></thead><tbody>${ops.map(o=>`<tr><td>${dateES(o.fecha)}</td><td>${esc(o.tipo_operacion)}</td><td>${Number(o.cantidad).toLocaleString("es-ES",{maximumFractionDigits:8})}</td><td>${money(o.precio_unitario)}</td></tr>`).join("")}</tbody></table>${lq?`<p class="muted">Última cotización: ${dateES(lq.fecha)} · ${Number(lq.cierre).toLocaleString("es-ES",{maximumFractionDigits:6})} ${esc(lq.moneda||"")}</p>`:""}${lv?`<p class="muted">Última valoración: ${dateES(lv.fecha)} · ${money(lv.valor_total)}</p>`:""}`;
+ document.getElementById("modal").classList.add("open");
 }
-async function showProduct(id){
- const p=state.products.find(x=>x.id===id);if(!p)return;
- const srcs=state.productSources.filter(x=>x.producto_id===id).sort((a,b)=>a.prioridad-b.prioridad);
- const sources=srcs.map(s=>state.sources.find(f=>f.id===s.fuente_id)).filter(Boolean);
- const q=latest(state.quotes,id),v=latest(state.vals,id),b=latest(state.balances,id);
- modal(`<h2>${esc(p.nombre)}</h2><div>${p.isin?`<span class="pill">ISIN ${esc(p.isin)}</span>`:""}${p.ticker?`<span class="pill">${esc(p.ticker)}</span>`:""}<span class="pill">${esc(typeName(p.tipo_producto_id))}</span></div><div class="grid2" style="margin-top:12px"><div class="box"><div class="label">Valor actual</div><div class="big">${euro(valueOf(p))}</div></div><div class="box"><div class="label">Último dato</div><div class="big">${dateES(v?.fecha||q?.fecha||b?.fecha)||"—"}</div></div></div><div class="sectionTitle">Fuentes</div>${sources.map((f,i)=>`<div class="source"><span class="rank">${i===0?"🥇":i===1?"🥈":"🥉"} ${esc(f.nombre)}</span><div class="muted small">Puntuación ${Number(f.puntuacion||0).toFixed(1)}/10 · ${f.frecuencia_actualizacion||"frecuencia no indicada"} · ${f.retraso_minutos??"?"} min retraso</div></div>`).join("")||"<div class='notice'>Este producto todavía no tiene fuentes asociadas.</div>"}<div class="toolbar"><button class="button" onclick="closeModal();openProduct('${p.entidad_financiera_id}','${p.id}')">✏️ Editar</button><button class="button secondary" onclick="closeModal();openQuote('${p.id}')">＋ Cotización manual</button><button class="button secondary" onclick="closeModal();openOperation('${p.id}')">＋ Operación</button></div>`);
-}
-window.showProduct=showProduct;
-
-window.openEntity=async function(){
- modal(`<h2>Nueva entidad</h2><form id="entityForm"><label>Nombre<input class="input" name="nombre" required></label><label>Tipo<select class="select" name="tipo"><option>Banco</option><option>Gestora</option><option>Broker</option><option>Financiera</option><option>Otra</option></select></label><button class="button" style="margin-top:14px;width:100%">Guardar</button></form>`);
- $("entityForm").onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.target);const name=fd.get("nombre").trim();const g=await supabase.rpc("registrar_entidad_global",{p_nombre:name,p_tipo:fd.get("tipo")});if(g.error){alert(g.error.message);return}const ins=await supabase.from("entidades_financieras").insert({user_id:state.user.id,nombre:name,tipo:fd.get("tipo"),activo:true}).select().single();if(ins.error){alert(ins.error.message);return}closeModal();await load()};
-}
-window.openProduct=async function(entityId="",id=""){
- const p=id?state.products.find(x=>x.id===id):null;
- const types=state.types.filter(t=>!["Cuenta corriente","Cuenta de ahorro","Cuenta de inversión"].includes(t.nombre));
- const entityOptions=state.entities.map(e=>`<option value="${e.id}" ${p?.entidad_financiera_id===e.id||entityId===e.id?"selected":""}>${esc(e.nombre)}</option>`).join("");
- modal(`<h2>${p?"Editar producto":"Nuevo producto"}</h2><form id="productForm"><div class="formGrid"><label>Nombre<input class="input" name="nombre" value="${esc(p?.nombre||"")}" required></label><label>Tipo<select class="select" name="tipo" required>${types.map(t=>`<option value="${t.id}" ${p?.tipo_producto_id===t.id?"selected":""}>${esc(t.nombre)}</option>`).join("")}</select></label><label>ISIN<input class="input" name="isin" value="${esc(p?.isin||"")}"></label><label>Ticker<input class="input" name="ticker" value="${esc(p?.ticker||"")}"></label><label>Moneda<input class="input" name="moneda" value="${esc(p?.moneda||"EUR")}"></label><label>Entidad<select class="select" name="entidad" required>${entityOptions}</select></label></div><div class="notice" style="margin-top:12px">Al crear un producto cotizable, Patrimonio lo incorpora a la biblioteca global. Las cotizaciones no se guardan en la ficha global.</div><button class="button" style="margin-top:14px;width:100%">Guardar</button></form>`);
- $("productForm").onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.target);const data={nombre:fd.get("nombre").trim(),tipo_producto_id:fd.get("tipo"),isin:fd.get("isin").trim()||null,ticker:fd.get("ticker").trim()||null,moneda:fd.get("moneda").trim()||"EUR",entidad_financiera_id:fd.get("entidad"),user_id:state.user.id,activo:true};if(p){const r=await supabase.from("productos").update(data).eq("id",p.id);if(r.error){alert(r.error.message);return}}else{const g=await supabase.rpc("registrar_producto_global",{p_nombre:data.nombre,p_tipo_producto_id:data.tipo_producto_id,p_isin:data.isin,p_ticker:data.ticker,p_moneda:data.moneda});if(g.error){alert(g.error.message);return}data.producto_maestro_id=g.data;const r=await supabase.from("productos").insert(data);if(r.error){alert(r.error.message);return}}closeModal();await load()};
-}
-window.openQuote=function(id){
- const p=state.products.find(x=>x.id===id);modal(`<h2>Cotización / valoración manual</h2><div class="muted">${esc(p.nombre)}</div><form id="quoteForm"><div class="formGrid"><label>Fecha<input class="input" type="date" name="fecha" required></label><label>Valor unitario<input class="input" type="number" step="0.000001" name="valor" required></label><label class="formFull">Observaciones<textarea class="input" name="obs"></textarea></label></div><button class="button" style="margin-top:14px;width:100%">Guardar</button></form>`);
- $("quoteForm").onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.target);const r=await supabase.from("valoraciones_historicas").insert({user_id:state.user.id,producto_id:id,fecha:fd.get("fecha"),precio_unitario:Number(fd.get("valor")),cantidad:productQuantity(id),valor_total:Number(fd.get("valor"))*Math.max(0,productQuantity(id)),moneda:p.moneda||"EUR",origen:"manual",fuente:"Histórico manual del usuario",observaciones:fd.get("obs")||null});if(r.error){alert(r.error.message);return}closeModal();await load()};
-}
-window.openOperation=function(id){
- const p=state.products.find(x=>x.id===id);modal(`<h2>Nueva operación</h2><div class="muted">${esc(p.nombre)}</div><form id="opForm"><div class="formGrid"><label>Fecha<input class="input" type="date" name="fecha" required></label><label>Tipo<select class="select" name="tipo"><option>Compra</option><option>Venta</option><option>Traspaso</option><option>Dividendo</option><option>Otro</option></select></label><label>Cantidad<input class="input" type="number" step="0.000001" name="cantidad"></label><label>Precio unitario<input class="input" type="number" step="0.000001" name="precio"></label><label>Gastos<input class="input" type="number" step="0.01" name="gastos" value="0"></label><label>Impuestos<input class="input" type="number" step="0.01" name="impuestos" value="0"></label><label class="formFull">Observaciones<textarea class="input" name="obs"></textarea></label></div><button class="button" style="margin-top:14px;width:100%">Guardar operación</button></form>`);
- $("opForm").onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.target);const qty=Number(fd.get("cantidad")||0),price=Number(fd.get("precio")||0),g=Number(fd.get("gastos")||0),im=Number(fd.get("impuestos")||0);const r=await supabase.from("operaciones").insert({user_id:state.user.id,producto_id:id,fecha:fd.get("fecha"),tipo_operacion:fd.get("tipo"),cantidad:qty,precio_unitario:price,gastos:g,impuestos:im,moneda:p.moneda||"EUR",importe_bruto:qty*price,importe_neto:qty*price+g+im,observaciones:fd.get("obs")||null});if(r.error){alert(r.error.message);return}closeModal();await load()};
-}
-window.updateAll=async function(){const btn=document.querySelector('.button');try{const r=await supabase.functions.invoke("actualizar-cotizaciones",{body:{}});if(r.error)throw r.error;alert("Actualización terminada. Se recargará el patrimonio.");await load()}catch(e){alert("La actualización no se ha podido completar: "+e.message)}};
-
-$("loginBtn").onclick=async()=>{const email=$("email").value.trim(),password=$("password").value;if(!email||!password){$("loginMsg").textContent="Introduce correo y contraseña.";return}const r=await supabase.auth.signInWithPassword({email,password});if(r.error){$("loginMsg").textContent=r.error.message;return}load()};
-$("password").onkeydown=e=>{if(e.key==="Enter")$("loginBtn").click()};
-$("logout").onclick=async()=>{await supabase.auth.signOut();load()};
-load().catch(e=>{console.error(e);$("loginMsg").textContent=e.message});
+function closeModal(){document.getElementById("modal").classList.remove("open")}
+function newEntity(){document.getElementById("modalContent").innerHTML=`<h2>Nueva entidad</h2><div class="notice">La entidad personal se vincula a la biblioteca global. Si ya existe, debe reutilizarse; si no existe, queda pendiente de incorporarse al catálogo global.</div><div class="form"><label>Nombre<input id="enombre"></label><label>Tipo<input id="etipo" placeholder="Banco, broker..."></label></div><br><button class="btn" onclick="saveEntity()">Guardar</button> <button class="btn secondary" onclick="closeModal()">Cancelar</button>`;document.getElementById("modal").classList.add("open")}
+async function saveEntity(){let nombre=document.getElementById("enombre").value.trim(),tipo=document.getElementById("etipo").value.trim();if(!nombre)return alert("Indica el nombre.");let {error}=await db.from("entidades_financieras").insert({user_id:state.user.id,nombre,tipo,activo:true});if(error)alert(error.message);else{closeModal();await load()}}
+function newProduct(){document.getElementById("modalContent").innerHTML=`<h2>Nuevo producto</h2><div class="notice">Primero se busca en la biblioteca global por ISIN, ticker o nombre. Esta pantalla crea la ficha de usuario; las cotizaciones nunca forman parte de la ficha global.</div><div class="form"><label>Nombre<input id="pnombre"></label><label>ISIN<input id="pisin"></label><label>Ticker<input id="pticker"></label><label>Moneda<input id="pmoneda" value="EUR"></label><label class="full">Tipo<select id="ptipo">${state.types.map(t=>`<option value="${t.id}">${esc(t.nombre)}</option>`).join("")}</select></label><label class="full">Entidad<select id="pentity">${state.entities.map(e=>`<option value="${e.id}">${esc(e.nombre)}</option>`).join("")}</select></label></div><br><button class="btn" onclick="saveProduct()">Guardar</button> <button class="btn secondary" onclick="closeModal()">Cancelar</button>`;document.getElementById("modal").classList.add("open")}
+async function saveProduct(){let nombre=document.getElementById("pnombre").value.trim(),isin=document.getElementById("pisin").value.trim()||null,ticker=document.getElementById("pticker").value.trim()||null,moneda=document.getElementById("pmoneda").value.trim()||"EUR",tipo_producto_id=document.getElementById("ptipo").value,entidad_financiera_id=document.getElementById("pentity").value;if(!nombre)return alert("Indica el nombre.");let master=state.masterProducts.find(p=>(isin&&p.isin===isin)||(ticker&&p.ticker===ticker)||p.nombre.toLowerCase()===nombre.toLowerCase());let {error}=await db.from("productos").insert({user_id:state.user.id,entidad_financiera_id,tipo_producto_id,nombre,isin,ticker,moneda,activo:true,producto_maestro_id:master?.id||null,entidad_maestra_id:state.entities.find(e=>e.id===entidad_financiera_id)?.entidad_maestra_id||null});if(error)alert(error.message);else{closeModal();await load()}}
+async function refresh(){await load()}
+db.auth.onAuthStateChange((_e,_s)=>{if(!_s)setTimeout(load,0)});
+load().catch(e=>{document.getElementById("app").innerHTML=`<div class="wrap"><div class="card error"><h2>Error al cargar Patrimonio</h2><p>${esc(e.message||e)}</p><button class="btn" onclick="load()">Reintentar</button></div></div>`});
 </script>
 </body>
 </html>
