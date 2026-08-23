@@ -1,3 +1,4 @@
+```
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -624,457 +625,371 @@
 
     try {
 
-      const sessionResult =
-        await supabase.auth.getSession();
-
-      const session =
-        sessionResult.data?.session;
+      const sessionResult = await supabase.auth.getSession();
+      const session = sessionResult.data?.session;
 
       if (!session) {
-
         showLogin();
-
         return;
-
       }
 
       showApp();
-
-      $("content").innerHTML =
-        '<div class="loading">Cargando patrimonio...</div>';
-
+      $("content").innerHTML = '<div class="loading">Cargando patrimonio...</div>';
 
       /* ------------------------------------------------------
-         CARTERAS
+         1. CARTERAS
          ------------------------------------------------------ */
+      const portfoliosResult = await supabase
+        .from("carteras")
+        .select("id,nombre,descripcion,fecha_inicio,moneda")
+        .eq("activa", true)
+        .order("nombre");
 
-      const portfoliosResult =
-        await supabase
-          .from("carteras")
-          .select(
-            "id,nombre,descripcion,fecha_inicio,moneda"
-          )
-          .eq("activa", true)
-          .order("nombre");
+      if (portfoliosResult.error) throw portfoliosResult.error;
 
+      const portfolios = portfoliosResult.data || [];
 
-      if (portfoliosResult.error) {
+      /* ------------------------------------------------------
+         2. TODOS LOS PRODUCTOS DEL USUARIO
+         La aplicación no debe limitarse a las carteras.
+         ------------------------------------------------------ */
+      const [productsResult, typesResult, entitiesResult] = await Promise.all([
+        supabase
+          .from("productos")
+          .select("id,nombre,isin,ticker,moneda,tipo_producto_id,entidad_financiera_id,activo")
+          .eq("activo", true)
+          .order("nombre"),
+        supabase
+          .from("tipos_productos")
+          .select("id,nombre"),
+        supabase
+          .from("entidades_financieras")
+          .select("id,nombre")
+      ]);
 
-        throw portfoliosResult.error;
+      if (productsResult.error) throw productsResult.error;
+      if (typesResult.error) throw typesResult.error;
+      if (entitiesResult.error) throw entitiesResult.error;
 
+      const products = productsResult.data || [];
+      const typeMap = new Map((typesResult.data || []).map(x => [x.id, x.nombre]));
+      const entityMap = new Map((entitiesResult.data || []).map(x => [x.id, x.nombre]));
+
+      /* ------------------------------------------------------
+         3. COMPONENTES DE LAS CARTERAS
+         Se excluyen después de aquí para no duplicarlos.
+         ------------------------------------------------------ */
+      const componentRows = [];
+      for (const portfolio of portfolios) {
+        const r = await supabase
+          .from("cartera_componentes")
+          .select("id,producto_id,cantidad,activo")
+          .eq("cartera_id", portfolio.id)
+          .eq("activo", true);
+
+        if (r.error) throw r.error;
+
+        for (const component of (r.data || [])) {
+          componentRows.push({
+            ...component,
+            cartera_id: portfolio.id
+          });
+        }
       }
 
+      const componentProductIds = new Set(componentRows.map(x => x.producto_id));
 
-      const portfolios =
-        portfoliosResult.data || [];
+      /* ------------------------------------------------------
+         4. OPERACIONES
+         Se utilizan para conocer la posición de productos
+         independientes cuando no existe una valoración con
+         cantidad/valor total.
+         ------------------------------------------------------ */
+      const operationsResult = await supabase
+        .from("operaciones")
+        .select("id,producto_id,fecha,tipo_operacion,cantidad,precio_unitario,observaciones,created_at")
+        .order("fecha", { ascending: true })
+        .order("created_at", { ascending: true });
 
+      if (operationsResult.error) throw operationsResult.error;
 
-      if (!portfolios.length) {
-
-        $("content").innerHTML = `
-          <section class="card">
-            <div class="section-title">
-              Mi patrimonio
-            </div>
-
-            <div class="empty">
-              No hay carteras activas en la base de datos.
-            </div>
-          </section>
-        `;
-
-        return;
-
+      const operationsByProduct = new Map();
+      for (const op of (operationsResult.data || [])) {
+        if (!operationsByProduct.has(op.producto_id)) operationsByProduct.set(op.producto_id, []);
+        operationsByProduct.get(op.producto_id).push(op);
       }
 
+      /* ------------------------------------------------------
+         5. ÚLTIMA VALORACIÓN / COTIZACIÓN DE CADA PRODUCTO
+         ------------------------------------------------------ */
+      async function getLatestValueCached(productId) {
+        return await getLatestValue(productId);
+      }
+
+      function currentQuantity(product, latestValue) {
+        const ops = operationsByProduct.get(product.id) || [];
+
+        if (latestValue?.kind === "valuation" && latestValue.cantidad !== null && latestValue.cantidad !== undefined) {
+          const q = Number(latestValue.cantidad);
+          if (Number.isFinite(q)) return q;
+        }
+
+        if (!ops.length) return 1;
+
+        const type = typeMap.get(product.tipo_producto_id) || "";
+
+        /* Fondos de Bankinter y otros fondos independientes:
+           compras - ventas. */
+        if (type === "Fondos de inversión") {
+          let q = 0;
+          for (const op of ops) {
+            const qty = Math.abs(Number(op.cantidad || 0));
+            const t = String(op.tipo_operacion || "").toLowerCase();
+            if (t === "compra" || t === "aportacion" || t === "entrada") q += qty;
+            else if (t === "venta" || t === "retiro" || t === "salida") q -= qty;
+            else if (t.includes("traspaso") && Number(op.cantidad || 0) < 0) q -= qty;
+            else if (t.includes("traspaso") && Number(op.cantidad || 0) > 0) q += qty;
+          }
+          return Math.max(0, q);
+        }
+
+        /* Acciones: muchas operaciones de dividendos contienen la
+           cantidad de acciones que había en ese momento. Las usamos
+           como fotografía de posición. Los splits/traspasos pueden
+           modificarla explícitamente. */
+        if (type === "Acciones") {
+          let q = 0;
+          for (const op of ops) {
+            const t = String(op.tipo_operacion || "").toLowerCase();
+            const qty = Number(op.cantidad || 0);
+
+            if (t === "compra") q += Math.abs(qty);
+            else if (t === "venta") q -= Math.abs(qty);
+            else if (t.includes("dividendo") || t.includes("acciones liberadas")) {
+              if (qty > 0 && (t.includes("efectivo") || t.includes("acciones") || t.includes("liberadas"))) q = qty;
+            } else if (t === "split") {
+              const m = String(op.observaciones || "").match(/pasan?\s+a\s+([0-9.,]+)/i);
+              if (m) q = Number(m[1].replace(/\./g, "").replace(",", "."));
+            } else if (t.includes("traspaso")) {
+              if (qty < 0) q = Math.max(0, q - Math.abs(qty));
+              else if (qty > 0) q += qty;
+            }
+          }
+          return Math.max(0, q);
+        }
+
+        /* Otros productos con operaciones. */
+        let q = 0;
+        for (const op of ops) {
+          const qty = Math.abs(Number(op.cantidad || 0));
+          const t = String(op.tipo_operacion || "").toLowerCase();
+          if (t === "compra" || t === "aportacion" || t === "entrada") q += qty;
+          else if (t === "venta" || t === "retiro" || t === "salida") q -= qty;
+          else if (t.includes("traspaso")) q += Number(op.cantidad || 0);
+        }
+        return Math.max(0, q);
+      }
 
       let totalPatrimonio = 0;
       let totalPosiciones = 0;
       let html = "";
 
-
-      /* ------------------------------------------------------
-         CADA CARTERA
-         ------------------------------------------------------ */
-
+      /* ======================================================
+         CARTERAS
+         ====================================================== */
       for (const portfolio of portfolios) {
-
-        const componentsResult =
-          await supabase
-            .from("cartera_componentes")
-            .select(
-              "id,producto_id,cantidad,activo"
-            )
-            .eq("cartera_id", portfolio.id)
-            .eq("activo", true);
-
-
-        if (componentsResult.error) {
-
-          html += `
-            <section class="card">
-              <div class="error">
-                Error al cargar la cartera
-                ${escapeHTML(portfolio.nombre)}:
-                ${escapeHTML(componentsResult.error.message)}
-              </div>
-            </section>
-          `;
-
-          continue;
-
-        }
-
-
-        const components =
-          componentsResult.data || [];
-
-
+        const components = componentRows.filter(x => x.cartera_id === portfolio.id);
         let portfolioTotal = 0;
         let positionsHTML = "";
 
-
-        /* ----------------------------------------------------
-           POSICIONES
-           ---------------------------------------------------- */
-
         for (const component of components) {
+          const product = products.find(p => p.id === component.producto_id);
+          if (!product) continue;
 
-          const productResult =
-            await supabase
-              .from("productos")
-              .select(
-                "id,nombre,isin,moneda"
-              )
-              .eq(
-                "id",
-                component.producto_id
-              )
-              .maybeSingle();
-
-
-          if (productResult.error ||
-              !productResult.data) {
-
-            continue;
-
-          }
-
-
-          const product =
-            productResult.data;
-
-
-          /* --------------------------------------------------
-             ÚLTIMA VALORACIÓN
-             -------------------------------------------------- */
-
-          const latestValue =
-            await getLatestValue(component.producto_id);
-
-
-          let price = 0;
+          const latestValue = await getLatestValueCached(product.id);
+          const quantity = Number(component.cantidad || 0);
+          const price = Number(latestValue?.price || 0);
           let positionValue = 0;
-          let valuationDate = "";
 
-
-          if (latestValue) {
-            price = Number(latestValue.price || 0);
-            valuationDate = dateES(latestValue.fecha);
-
-            if (latestValue.kind === "valuation" &&
-                latestValue.valor_total !== null &&
-                latestValue.valor_total !== undefined) {
-              positionValue = Number(latestValue.valor_total || 0);
-            } else {
-              positionValue = price * Number(component.cantidad || 0);
-            }
+          if (latestValue?.kind === "valuation" && latestValue.valor_total !== null && latestValue.valor_total !== undefined) {
+            positionValue = Number(latestValue.valor_total || 0);
+          } else if (price && quantity) {
+            positionValue = price * quantity;
           }
 
-
-          const quantity =
-            Number(component.cantidad || 0);
-
-
-          /* Si valor_total no representa la posición,
-             calculamos con precio × cantidad cuando procede. */
-
-          if (
-            positionValue === 0 &&
-            price !== 0 &&
-            quantity !== 0
-          ) {
-
-            positionValue =
-              price * quantity;
-
-          }
-
-
-          portfolioTotal +=
-            Number(positionValue || 0);
-
+          portfolioTotal += positionValue;
           totalPosiciones++;
 
-
-          positionsHTML += `
-
-            <div class="position">
-
-              <div class="row mobile-column">
-
-                <div class="column">
-
-                  <div class="name">
-                    ${escapeHTML(product.nombre)}
-                  </div>
-
-                  ${
-                    product.isin
-                    ? `
-                      <div class="muted small">
-                        ISIN:
-                        ${escapeHTML(product.isin)}
-                      </div>
-                    `
-                    : ""
-                  }
-
-                </div>
-
-
-                <div class="column">
-
-                  <div class="amount">
-                    ${euro(positionValue)}
-                  </div>
-
-                  ${
-                    price
-                    ? `
-                      <div class="muted small">
-                        Precio:
-                        ${euro(price)}
-                      </div>
-                    `
-                    : ""
-                  }
-
-                </div>
-
-              </div>
-
-
-              <div class="muted small"
-                   style="margin-top:6px">
-
-                ${number(quantity)}
-                participaciones
-
-                ${
-                  valuationDate
-                  ? ` · Valoración ${valuationDate}`
-                  : ""
-                }
-
-              </div>
-
-            </div>
-
-          `;
-
+          positionsHTML += renderPosition(product, quantity, price, positionValue, latestValue);
         }
 
-
-        totalPatrimonio +=
-          portfolioTotal;
-
-
-        /* ----------------------------------------------------
-           CARTERA
-           ---------------------------------------------------- */
+        totalPatrimonio += portfolioTotal;
 
         html += `
-
           <section class="card">
-
             <div class="row mobile-column">
-
               <div class="column">
-
-                <span class="pill">
-                  Cartera
-                </span>
-
-                <h2>
-                  ${escapeHTML(portfolio.nombre)}
-                </h2>
-
-                ${
-                  portfolio.fecha_inicio
-                  ? `
-                    <div class="muted small">
-                      Desde
-                      ${dateES(portfolio.fecha_inicio)}
-                    </div>
-                  `
-                  : ""
-                }
-
-                ${
-                  portfolio.descripcion
-                  ? `
-                    <div class="muted small"
-                         style="margin-top:5px">
-                      ${escapeHTML(
-                        portfolio.descripcion
-                      )}
-                    </div>
-                  `
-                  : ""
-                }
-
+                <span class="pill">Cartera</span>
+                <h2>${escapeHTML(portfolio.nombre)}</h2>
+                ${portfolio.fecha_inicio ? `<div class="muted small">Desde ${dateES(portfolio.fecha_inicio)}</div>` : ""}
+                ${portfolio.descripcion ? `<div class="muted small" style="margin-top:5px">${escapeHTML(portfolio.descripcion)}</div>` : ""}
               </div>
-
-
-              <div class="hero-value"
-                   style="color:#172033">
-
-                ${euro(portfolioTotal)}
-
-              </div>
-
+              <div class="hero-value" style="color:#172033">${euro(portfolioTotal)}</div>
             </div>
-
-
-            <div class="section-title">
-              Posiciones
-            </div>
-
-
-            ${
-              positionsHTML
-              ||
-              `
-                <div class="empty">
-                  Esta cartera no tiene
-                  posiciones activas.
-                </div>
-              `
-            }
-
+            <div class="section-title">Posiciones</div>
+            ${positionsHTML || `<div class="empty">Esta cartera no tiene posiciones activas.</div>`}
           </section>
-
         `;
-
       }
 
+      /* ======================================================
+         PRODUCTOS INDEPENDIENTES
+         ====================================================== */
+      const independentProducts = products.filter(p => !componentProductIds.has(p.id));
+      const groups = new Map();
+
+      for (const product of independentProducts) {
+        const type = typeMap.get(product.tipo_producto_id) || "Otros";
+        if (!groups.has(type)) groups.set(type, []);
+        groups.get(type).push(product);
+      }
+
+      const typeOrder = [
+        "Cuentas corrientes",
+        "Cuenta corriente",
+        "Cuentas de ahorro",
+        "Cuenta de ahorro",
+        "Cuenta de inversión",
+        "Acciones",
+        "Fondos de inversión",
+        "Planes de pensiones"
+      ];
+
+      const orderedGroups = [...groups.entries()].sort((a,b) => {
+        const ia = typeOrder.indexOf(a[0]);
+        const ib = typeOrder.indexOf(b[0]);
+        return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib) || a[0].localeCompare(b[0], "es");
+      });
+
+      for (const [type, groupProducts] of orderedGroups) {
+        let groupHTML = "";
+        let groupTotal = 0;
+        let visibleCount = 0;
+
+        for (const product of groupProducts) {
+          const latestValue = await getLatestValueCached(product.id);
+          const ops = operationsByProduct.get(product.id) || [];
+          const quantity = currentQuantity(product, latestValue);
+          const price = Number(latestValue?.price || 0);
+
+          let positionValue = 0;
+          if (latestValue?.kind === "valuation" && latestValue.valor_total !== null && latestValue.valor_total !== undefined) {
+            positionValue = Number(latestValue.valor_total || 0);
+          } else if (price && quantity) {
+            positionValue = price * quantity;
+          }
+
+          /* Para cuentas, el valor total de la última valoración es
+             el saldo, aunque no exista una cantidad. */
+          if ((type.includes("Cuenta")) && latestValue?.valor_total !== null && latestValue?.valor_total !== undefined) {
+            positionValue = Number(latestValue.valor_total || 0);
+          }
+
+          const hasData = latestValue || ops.length > 0 || quantity > 0;
+          if (!hasData) continue;
+
+          groupTotal += positionValue;
+          totalPatrimonio += positionValue;
+          totalPosiciones++;
+          visibleCount++;
+
+          const entity = entityMap.get(product.entidad_financiera_id) || "";
+          groupHTML += renderPosition(product, quantity, price, positionValue, latestValue, entity, type);
+        }
+
+        if (!visibleCount) continue;
+
+        html += `
+          <section class="card">
+            <div class="row mobile-column">
+              <div class="column">
+                <span class="pill">${escapeHTML(type)}</span>
+                <h2>${escapeHTML(type)}</h2>
+              </div>
+              <div class="hero-value" style="color:#172033">${euro(groupTotal)}</div>
+            </div>
+            <div class="section-title">Productos</div>
+            ${groupHTML}
+          </section>
+        `;
+      }
 
       /* ------------------------------------------------------
          RESUMEN PRINCIPAL
          ------------------------------------------------------ */
-
       const summary = `
-
         <section class="card hero">
-
-          <div class="muted">
-            Patrimonio total
-          </div>
-
-          <div class="hero-value">
-            ${euro(totalPatrimonio)}
-          </div>
-
-
+          <div class="muted">Patrimonio total</div>
+          <div class="hero-value">${euro(totalPatrimonio)}</div>
           <div class="summary-grid">
-
             <div class="summary-box">
-
-              <div class="summary-label">
-                Carteras
-              </div>
-
-              <div class="summary-number">
-                ${portfolios.length}
-              </div>
-
+              <div class="summary-label">Carteras</div>
+              <div class="summary-number">${portfolios.length}</div>
             </div>
-
-
             <div class="summary-box">
-
-              <div class="summary-label">
-                Posiciones
-              </div>
-
-              <div class="summary-number">
-                ${totalPosiciones}
-              </div>
-
+              <div class="summary-label">Posiciones</div>
+              <div class="summary-number">${totalPosiciones}</div>
             </div>
-
-
             <div class="summary-box">
-
-              <div class="summary-label">
-                Moneda
-              </div>
-
-              <div class="summary-number">
-                EUR
-              </div>
-
+              <div class="summary-label">Productos</div>
+              <div class="summary-number">${independentProducts.length + componentProductIds.size}</div>
             </div>
-
           </div>
-
         </section>
-
       `;
 
-
-      $("content").innerHTML =
-        summary + html;
-
+      $("content").innerHTML = summary + html;
 
     } catch (error) {
-
-      console.error(
-        "Error cargando Patrimonio:",
-        error
-      );
-
-
+      console.error("Error cargando Patrimonio:", error);
       $("content").innerHTML = `
-
         <section class="card">
-
-          <div class="section-title">
-            No se ha podido cargar Patrimonio
-          </div>
-
-          <div class="error">
-            ${escapeHTML(
-              error?.message ||
-              "Error desconocido"
-            )}
-          </div>
-
-          <button
-            class="button"
-            onclick="location.reload()">
-            Reintentar
-          </button>
-
+          <div class="section-title">No se ha podido cargar Patrimonio</div>
+          <div class="error">${escapeHTML(error?.message || "Error desconocido")}</div>
+          <button class="button" onclick="location.reload()">Reintentar</button>
         </section>
-
       `;
-
     }
 
   }
 
+
+  function renderPosition(product, quantity, price, positionValue, latestValue, entity = "", type = "") {
+    const valuationDate = latestValue?.fecha ? dateES(latestValue.fecha) : "";
+    const source = latestValue?.fuente || latestValue?.fuente_id || "";
+
+    return `
+      <div class="position">
+        <div class="row mobile-column">
+          <div class="column">
+            <div class="name">${escapeHTML(product.nombre)}</div>
+            ${entity ? `<div class="muted small">Entidad: ${escapeHTML(entity)}</div>` : ""}
+            ${product.isin ? `<div class="muted small">ISIN: ${escapeHTML(product.isin)}</div>` : ""}
+            ${product.ticker ? `<div class="muted small">Ticker: ${escapeHTML(product.ticker)}</div>` : ""}
+          </div>
+          <div class="column">
+            <div class="amount">${euro(positionValue)}</div>
+            ${price ? `<div class="muted small">Precio: ${euro(price)}</div>` : ""}
+          </div>
+        </div>
+        <div class="muted small" style="margin-top:6px">
+          ${quantity > 0 ? `${number(quantity)} ${type.includes("Cuenta") ? "unidad" : "participaciones"}` : "Sin posición cuantificada"}
+          ${valuationDate ? ` · Valoración ${valuationDate}` : ""}
+          ${source ? ` · Fuente: ${escapeHTML(source)}` : ""}
+        </div>
+      </div>
+    `;
+  }
 
   /* ==========================================================
      LOGIN
@@ -1224,3 +1139,4 @@
 
 </body>
 </html>
+```
