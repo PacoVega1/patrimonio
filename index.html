@@ -274,6 +274,47 @@
       margin-top: 3px;
     }
 
+    .update-bar {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin: 14px 0;
+      flex-wrap:wrap;
+    }
+
+    .update-status {
+      font-size:13px;
+      color:var(--muted);
+      flex:1;
+      min-width:220px;
+    }
+
+    .update-status.success { color:var(--positive); }
+    .update-status.warning { color:#9a6700; }
+    .update-status.error { color:var(--negative); }
+
+    .button-update {
+      min-width:170px;
+      white-space:nowrap;
+    }
+
+    .button-update.loading {
+      opacity:.75;
+      cursor:wait;
+    }
+
+    .update-report {
+      margin:12px 0 18px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:12px 14px;
+      background:var(--card);
+    }
+
+    .update-report ul { margin:8px 0 0 20px; padding:0; }
+    .update-report li { margin:4px 0; }
+
     @media (max-width: 600px) {
       .wrap {
         padding: 15px 12px 40px;
@@ -346,6 +387,16 @@
       </button>
     </header>
 
+    <div class="update-bar">
+      <button id="updateButton" class="button button-update">
+        🔄 Actualizar todo
+      </button>
+      <div id="updateStatus" class="update-status">
+        Preparado para actualizar cotizaciones y valoraciones.
+      </div>
+    </div>
+
+    <div id="updateReport" class="update-report hidden"></div>
 
     <div id="content">
 
@@ -465,6 +516,103 @@
     $("login").classList.add("hidden");
     $("app").classList.remove("hidden");
 
+  }
+
+
+  /* ==========================================================
+     ACTUALIZACIÓN Y VALORACIÓN
+     ========================================================== */
+
+  async function actualizarTodo() {
+
+    const button = $("updateButton");
+    const status = $("updateStatus");
+    const report = $("updateReport");
+
+    button.disabled = true;
+    button.classList.add("loading");
+    button.textContent = "⏳ Actualizando...";
+    status.className = "update-status";
+    status.textContent = "Consultando las fuentes configuradas...";
+    report.classList.add("hidden");
+
+    try {
+      const { data, error } = await supabase.functions.invoke("actualizar-cotizaciones", {
+        body: {}
+      });
+
+      if (error) throw error;
+
+      const result = data || {};
+      const resumen = result.resumen || {};
+      const detalles = result.detalles || [];
+
+      const actualizados = Number(resumen.actualizados || 0);
+      const discrepancias = Number(resumen.discrepancias || 0);
+      const sinFuente = Number(resumen.sin_fuente || 0);
+      const errores = Number(resumen.errores || 0);
+
+      status.className = "update-status " + (errores || sinFuente ? "warning" : discrepancias ? "warning" : "success");
+      status.textContent = `Actualización terminada · ${actualizados} valores nuevos · ${discrepancias} discrepancias`;
+
+      const lines = detalles.map(d => {
+        const name = escapeHTML(d.producto || "Producto");
+        if (d.estado === "actualizado") return `<li>✅ <strong>${name}</strong>: ${escapeHTML(d.fecha || "")}</li>`;
+        if (d.estado === "discrepancia") return `<li>⚠️ <strong>${name}</strong>: manual ${escapeHTML(String(d.manual ?? ""))} · automático ${escapeHTML(String(d.automatico ?? ""))}</li>`;
+        if (d.estado === "sin_fuente") return `<li>🟠 <strong>${name}</strong>: fuente configurada pero no disponible para actualización automática.</li>`;
+        if (d.estado === "error") return `<li>❌ <strong>${name}</strong>: ${escapeHTML(d.error || "Error")}</li>`;
+        return `<li>ℹ️ <strong>${name}</strong>: ${escapeHTML(d.mensaje || "Sin cambios")}</li>`;
+      }).join("");
+
+      report.innerHTML = `<strong>Resultado de la actualización</strong><ul>${lines}</ul>`;
+      report.classList.remove("hidden");
+
+      await loadApp();
+
+    } catch (error) {
+      console.error("Error actualizando cotizaciones:", error);
+      status.className = "update-status error";
+      status.textContent = "No se ha podido completar la actualización.";
+      report.innerHTML = `<strong>Error</strong><div class="error" style="margin-top:6px">${escapeHTML(error?.message || "Error desconocido")}</div>`;
+      report.classList.remove("hidden");
+    } finally {
+      button.disabled = false;
+      button.classList.remove("loading");
+      button.textContent = "🔄 Actualizar todo";
+    }
+  }
+
+
+  async function getLatestValue(productId) {
+
+    const [quotesResult, valuationsResult] = await Promise.all([
+      supabase.from("cotizaciones_historicas")
+        .select("fecha,cierre,moneda,fuente_id,observaciones")
+        .eq("producto_id", productId)
+        .order("fecha", { ascending:false })
+        .limit(1)
+        .maybeSingle(),
+      supabase.from("valoraciones_historicas")
+        .select("fecha,precio_unitario,valor_total,origen,fuente,observaciones")
+        .eq("producto_id", productId)
+        .order("fecha", { ascending:false })
+        .limit(1)
+        .maybeSingle()
+    ]);
+
+    if (quotesResult.error) throw quotesResult.error;
+    if (valuationsResult.error) throw valuationsResult.error;
+
+    const q = quotesResult.data;
+    const v = valuationsResult.data;
+
+    if (!q && !v) return null;
+    if (!q) return { kind:"valuation", ...v, price:Number(v.precio_unitario || 0) };
+    if (!v) return { kind:"quote", fecha:q.fecha, price:Number(q.cierre || 0), moneda:q.moneda, fuente:q.fuente_id };
+
+    return q.fecha >= v.fecha
+      ? { kind:"quote", fecha:q.fecha, price:Number(q.cierre || 0), moneda:q.moneda, fuente:q.fuente_id }
+      : { kind:"valuation", ...v, price:Number(v.precio_unitario || 0) };
   }
 
 
@@ -621,22 +769,8 @@
              ÚLTIMA VALORACIÓN
              -------------------------------------------------- */
 
-          const valuationResult =
-            await supabase
-              .from("valoraciones_historicas")
-              .select(
-                "fecha,precio_unitario,valor_total"
-              )
-              .eq(
-                "producto_id",
-                component.producto_id
-              )
-              .order(
-                "fecha",
-                { ascending: false }
-              )
-              .limit(1)
-              .maybeSingle();
+          const latestValue =
+            await getLatestValue(component.producto_id);
 
 
           let price = 0;
@@ -644,39 +778,17 @@
           let valuationDate = "";
 
 
-          if (!valuationResult.error &&
-              valuationResult.data) {
+          if (latestValue) {
+            price = Number(latestValue.price || 0);
+            valuationDate = dateES(latestValue.fecha);
 
-            const valuation =
-              valuationResult.data;
-
-            price =
-              Number(
-                valuation.precio_unitario || 0
-              );
-
-            const storedTotal =
-              valuation.valor_total;
-
-            if (
-              storedTotal !== null &&
-              storedTotal !== undefined
-            ) {
-
-              positionValue =
-                Number(storedTotal || 0);
-
+            if (latestValue.kind === "valuation" &&
+                latestValue.valor_total !== null &&
+                latestValue.valor_total !== undefined) {
+              positionValue = Number(latestValue.valor_total || 0);
             } else {
-
-              positionValue =
-                price *
-                Number(component.cantidad || 0);
-
+              positionValue = price * Number(component.cantidad || 0);
             }
-
-            valuationDate =
-              dateES(valuation.fecha);
-
           }
 
 
@@ -1074,6 +1186,13 @@
 
     }
   );
+
+
+  /* ==========================================================
+     ACTUALIZAR TODO
+     ========================================================== */
+
+  $("updateButton").addEventListener("click", actualizarTodo);
 
 
   /* ==========================================================
