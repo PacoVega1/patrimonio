@@ -1,176 +1,20 @@
-<!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Patrimonio</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-:root{--blue:#214889;--blue2:#2e65c5;--bg:#f4f6fb;--card:#fff;--text:#14213d;--muted:#71809b;--line:#dfe5ef;--green:#198754;--red:#c0392b}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;color:var(--text)}
-.wrap{max-width:1380px;margin:auto;padding:24px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px}.brand h1{margin:0;font-size:34px}.brand p{margin:4px 0;color:var(--muted)}
-button,.tab,input,select{font:inherit}.btn{border:0;border-radius:12px;padding:12px 17px;font-weight:700;cursor:pointer;background:var(--blue);color:white}.btn.secondary{background:white;color:var(--blue);border:1px solid var(--line)}.btn.danger{background:#fff0ef;color:var(--red)}
-.tabs{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}.tab{border:1px solid var(--line);background:#fff;border-radius:28px;padding:12px 18px;font-weight:800;cursor:pointer}.tab.active{background:var(--blue);color:#fff}
-.hero{background:linear-gradient(135deg,#204784,#3269c9);color:#fff;border-radius:22px;padding:28px;margin-bottom:18px}.hero small{opacity:.85}.total{font-size:48px;font-weight:900;margin:5px 0 20px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.stat{background:rgba(255,255,255,.14);padding:15px;border-radius:14px}.stat b{display:block;font-size:22px;margin-top:5px}
-.actions{display:flex;gap:10px;flex-wrap:wrap;margin:15px 0}.search{flex:1;min-width:260px;padding:13px 16px;border:1px solid var(--line);border-radius:12px;background:#fff}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 5px 18px rgba(20,33,61,.04)}.card h2,.card h3{margin-top:0}
-.product{display:flex;justify-content:space-between;gap:18px;padding:15px 0;border-top:1px solid var(--line);cursor:pointer}.product:first-child{border-top:0}.product .name{font-weight:850}.meta{color:var(--muted);font-size:13px;margin-top:4px}.value{font-weight:900;font-size:19px;white-space:nowrap}
-.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#edf3ff;color:#2459b0;font-size:12px;font-weight:800;margin:2px}.badge.warn{background:#fff7df;color:#765c13}.badge.ok{background:#eaf7ef;color:#176b42}
-.section{margin-top:20px}.section-title{display:flex;justify-content:space-between;align-items:end;margin-bottom:10px}.section-title h2{margin:0}.muted{color:var(--muted)}
-.row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}.bar{height:10px;background:#e8edf5;border-radius:99px;overflow:hidden;margin-top:8px}.bar i{display:block;height:100%;background:#3269c9}
-table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line);font-size:14px}th{color:var(--muted)}
-.modal{position:fixed;inset:0;background:rgba(10,20,40,.5);display:none;align-items:center;justify-content:center;padding:20px;z-index:20}.modal.open{display:flex}.modalbox{background:#fff;border-radius:18px;max-width:900px;width:100%;max-height:90vh;overflow:auto;padding:22px}
-.form{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.form label{font-weight:700;font-size:13px}.form input,.form select{width:100%;margin-top:5px;padding:11px;border:1px solid var(--line);border-radius:10px}.form .full{grid-column:1/-1}
-.notice{padding:14px;border-radius:12px;background:#fff7df;color:#765c13;margin:12px 0}.error{background:#fff0ef;color:#9c2c20}.empty{text-align:center;padding:35px;color:var(--muted)}
-.entity-head{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:16px 0;cursor:pointer;border-bottom:1px solid var(--line)}.entity-head:first-child{border-top:0}.entity-head .entity-name{font-size:19px;font-weight:850}.entity-total{font-size:20px;font-weight:900;white-space:nowrap}.entity-products{padding:0 0 12px 18px}.chevron{font-size:18px;width:28px;display:inline-block}
-.login{max-width:420px;margin:100px auto}.login h1{margin-top:0}
-@media(max-width:850px){.stats,.grid{grid-template-columns:1fr 1fr}.product{display:block}.value{margin-top:8px}.form{grid-template-columns:1fr}.entity-head{align-items:flex-start}.entity-total{font-size:18px}}
-@media(max-width:560px){.wrap{padding:14px}.stats,.grid{grid-template-columns:1fr}.total{font-size:38px}.entity-head{display:block}.entity-total{margin-top:6px}}
-</style>
-</head>
-<body>
-<div id="app"></div>
-<div id="modal" class="modal"><div class="modalbox"><div id="modalContent"></div></div></div>
-<script>
-const SUPABASE_URL="https://rnwtvkhnhybdgxhmgebw.supabase.co";
-const SUPABASE_KEY="sb_publishable_r00Qvz_GBmRi4fVj6O7scA_jIj9wuyN";
-const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-let state={user:null,products:[],entities:[],types:[],sources:[],masterEntities:[],masterProducts:[],masterProductSources:[],ops:[],valuations:[],quotes:[],tab:"resumen",search:"",expandedEntities:{}};
-
-const money=n=>new Intl.NumberFormat("es-ES",{style:"currency",currency:"EUR"}).format(Number(n)||0);
-const dateES=d=>d?new Intl.DateTimeFormat("es-ES").format(new Date(d+"T00:00:00")):"—";
-const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
-function typeOrder(t){let x=state.types.find(a=>a.id===t);return x?.orden_presentacion??999}
-function opSign(o){let t=(o.tipo_operacion||"").toLowerCase();return /venta|retirada|salida/.test(t)?-1:1}
-function qtyFor(pid){return state.ops.filter(o=>o.producto_id===pid).reduce((s,o)=>s+opSign(o)*Number(o.cantidad||0),0)}
-function latest(arr,key){let m={};for(const x of arr){if(!m[x[key]]||String(x.fecha)>String(m[x[key]].fecha))m[x[key]]=x}return m}
-function latestVal(pid){return latest(state.valuations,"producto_id")[pid]}
-function latestQuote(pid){return latest(state.quotes,"producto_id")[pid]}
-function daysOld(d){if(!d)return Infinity;const a=new Date(String(d)+"T00:00:00");const b=new Date();return Math.floor((b-a)/86400000)}
-function isFresh(d,maxDays){return daysOld(d)>=0&&daysOld(d)<=maxDays}
-function isAccount(p){return ["Cuenta corriente","Cuenta de ahorro","Cuenta de inversión"].includes(typeName(p))}
-function productValue(p){
-  const v=latestVal(p.id);
-  if(isAccount(p)) return v&&v.valor_total!=null?Number(v.valor_total):0;
-  if(v&&v.valor_total!=null&&isFresh(v.fecha,45))return Number(v.valor_total);
-  const q=latestQuote(p.id),qty=qtyFor(p.id);
-  if(q&&q.cierre!=null&&isFresh(q.fecha,10)&&qty)return Number(q.cierre)*qty*Number(q.factor_conversion||1);
-  return 0;
-}
-function valuationStatus(p){
-  const v=latestVal(p.id),q=latestQuote(p.id);
-  if(isAccount(p))return v?`saldo actualizado ${dateES(v.fecha)}`:"sin saldo registrado";
-  if(q&&isFresh(q.fecha,10))return `última cotización ${dateES(q.fecha)}`;
-  if(v&&isFresh(v.fecha,45))return `última valoración ${dateES(v.fecha)}`;
-  if(q)return `cotización antigua: ${dateES(q.fecha)}`;
-  if(v)return `valoración antigua: ${dateES(v.fecha)}`;
-  return "sin valoración actual";
-}
-function valuationBadge(p){
-  const v=productValue(p),v0=latestVal(p.id),q=latestQuote(p.id);
-  if(isAccount(p))return v0?`<span class="badge ok">Saldo ${dateES(v0.fecha)}</span>`:`<span class="badge warn">Sin saldo</span>`;
-  if(q&&isFresh(q.fecha,10))return `<span class="badge ok">Cotización ${dateES(q.fecha)}</span>`;
-  if(v0&&isFresh(v0.fecha,45))return `<span class="badge ok">Valoración ${dateES(v0.fecha)}</span>`;
-  return `<span class="badge warn">Sin valoración actual</span>`;
-}
-function totalValue(){return state.products.reduce((s,p)=>s+productValue(p),0)}
-function typeName(p){return state.types.find(t=>t.id===p.tipo_producto_id)?.nombre||"Sin categoría"}
-function entityName(p){return state.entities.find(e=>e.id===p.entidad_financiera_id)?.nombre||"Sin entidad"}
-function groupedByType(){
- const g={}; [...state.products].sort((a,b)=>typeOrder(a.tipo_producto_id)-typeOrder(b.tipo_producto_id)||a.nombre.localeCompare(b.nombre,"es")).forEach(p=>{let k=typeName(p);(g[k]??=[]).push(p)});return g;
-}
-function groupedByEntity(){
- const g={}; [...state.products].sort((a,b)=>entityName(a).localeCompare(entityName(b),"es")||typeOrder(a.tipo_producto_id)-typeOrder(b.tipo_producto_id)||a.nombre.localeCompare(b.nombre,"es")).forEach(p=>{let k=entityName(p);(g[k]??=[]).push(p)});return g;
-}
-
-async function load(){
- const {data:{user},error:ae}=await db.auth.getUser(); if(ae)throw ae;
- state.user=user;
- if(!user){renderLogin();return}
- const uid=user.id;
- const results=await Promise.all([
-  db.from("productos").select("*").eq("user_id",uid),
-  db.from("entidades_financieras").select("*").eq("user_id",uid),
-  db.from("tipos_productos").select("*").eq("activo",true).order("orden_presentacion"),
-  db.from("fuentes_valoracion").select("*").order("puntuacion",{ascending:false}),
-  db.from("entidades_maestras").select("*").eq("activo",true).order("nombre"),
-  db.from("productos_maestros").select("*").eq("activo",true).order("nombre"),
-  db.from("productos_maestros_fuentes").select("*"),
-  db.from("operaciones").select("*").eq("user_id",uid).order("fecha"),
-  db.from("valoraciones_historicas").select("*").eq("user_id",uid).order("fecha"),
-  db.from("cotizaciones_historicas").select("*").eq("user_id",uid).order("fecha")
- ]);
- const names=["products","entities","types","sources","masterEntities","masterProducts","masterProductSources","ops","valuations","quotes"];
- for(let i=0;i<results.length;i++){if(results[i].error)throw results[i].error;state[names[i]]=results[i].data||[]}
- render();
-}
-function renderLogin(){
- document.getElementById("app").innerHTML=`<div class="login card"><h1>Patrimonio</h1><p class="muted">Accede a tu patrimonio.</p><div class="form"><label class="full">Email<input id="email" type="email"></label><label class="full">Contraseña<input id="password" type="password"></label></div><br><button class="btn" onclick="login()">Entrar</button><p id="loginMsg"></p></div>`;
-}
-async function login(){const e=document.getElementById("email").value,p=document.getElementById("password").value;const {error}=await db.auth.signInWithPassword({email:e,password:p});if(error)document.getElementById("loginMsg").innerHTML='<span class="error">'+esc(error.message)+'</span>';else load()}
-async function logout(){await db.auth.signOut();load()}
-function render(){
- const t=totalValue(), cats=groupedByType(), ents=groupedByEntity();
- document.getElementById("app").innerHTML=`<div class="wrap">
- <div class="top"><div class="brand"><h1>Patrimonio</h1><p>Tu patrimonio, en un solo lugar</p></div><button class="btn secondary" onclick="logout()">Salir</button></div>
- <div class="tabs">
- ${tab("resumen","🏠 Resumen")}${tab("entidades","🏛️ Entidades")}${tab("categorias","📊 Categorías")}${tab("biblioteca","📚 Biblioteca")}${tab("fuentes","🌐 Fuentes")}
- </div>
- ${state.tab==="resumen"?summary(t,cats,ents):state.tab==="entidades"?entitiesView(ents):state.tab==="categorias"?categoriesView(cats):state.tab==="biblioteca"?libraryView():sourcesView()}
- </div>`;
-}
-function tab(k,label){return `<button class="tab ${state.tab===k?"active":""}" onclick="state.tab='${k}';render()">${label}</button>`}
-function summary(t,cats,ents){
- const vals=Object.entries(cats).map(([k,ps])=>[k,ps.reduce((s,p)=>s+productValue(p),0)]).sort((a,b)=>b[1]-a[1]);
- const max=vals[0]?.[1]||1;
- return `<div class="hero"><small>Patrimonio total</small><div class="total">${money(t)}</div><div class="stats">
- <div class="stat">Cuentas<b>${money(sumTypes(["Cuenta corriente","Cuenta de ahorro","Cuenta de inversión"]))}</b></div>
- <div class="stat">Inversiones<b>${money(t-sumTypes(["Cuenta corriente","Cuenta de ahorro","Cuenta de inversión"]))}</b></div>
- <div class="stat">Productos<b>${state.products.length}</b></div><div class="stat">Entidades<b>${Object.keys(ents).length}</b></div></div></div>
- <div class="actions"><button class="btn" onclick="refresh()">🔄 Actualizar todo</button><button class="btn secondary" onclick="newProduct()">＋ Nuevo producto</button><button class="btn secondary" onclick="newEntity()">＋ Nueva entidad</button><input class="search" placeholder="🔎 Buscar producto, ISIN o entidad" value="${esc(state.search)}" oninput="state.search=this.value;render()"></div>
- <div class="grid"><div class="card"><div class="section-title"><h2>Distribución</h2></div>${vals.map(([k,v])=>`<div class="row"><span>${esc(k)}</span><b>${money(v)}</b><div class="bar" style="width:100%"><i style="width:${Math.max(1,v/max*100)}%"></i></div></div>`).join("")||empty()}</div>
- <div class="card"><div class="section-title"><h2>Estado</h2></div><p>Las cuentas usan su <b>último saldo registrado</b>. Las inversiones solo usan una valoración reciente o una cotización reciente.</p><p class="muted">Una cotización o valoración antigua no se utiliza como valor actual. Así, por ejemplo, un dato de 2003 nunca puede valorarse como actual en 2026.</p></div></div>
- <div class="section card"><div class="section-title"><h2>Patrimonio por entidades</h2><button class="btn secondary" onclick="state.tab='entidades';render()">Ver todo</button></div>${Object.entries(ents).sort((a,b)=>a[0].localeCompare(b[0],"es")).slice(0,8).map(([e,ps])=>`<div class="row"><span>${esc(e)}</span><b>${money(ps.reduce((s,p)=>s+productValue(p),0))}</b></div>`).join("")}</div>
- <div class="section card"><div class="section-title"><h2>Dashboard</h2></div><p class="muted">El dashboard se mantiene provisionalmente. Primero corregimos datos, valoraciones e históricos; después rediseñamos esta pantalla.</p></div>`;
-}
-function sumTypes(names){return state.products.filter(p=>names.includes(typeName(p))).reduce((s,p)=>s+productValue(p),0)}
-function filterProducts(ps){let q=state.search.trim().toLowerCase();return !q?ps:ps.filter(p=>(p.nombre+" "+(p.isin||"")+" "+(p.ticker||"")+" "+entityName(p)).toLowerCase().includes(q))}
-function toggleEntity(e){state.expandedEntities[e]=!state.expandedEntities[e];render()}
-function entitiesView(g){
- const entries=Object.entries(g).sort((a,b)=>a[0].localeCompare(b[0],"es"));
- return `<div class="card"><div class="section-title"><h2>Entidades</h2><button class="btn secondary" onclick="newEntity()">＋ Nueva entidad</button></div><p class="muted">Cada entidad muestra primero solo su total. Pulsa sobre ella para desplegar todos sus productos.</p>${entries.map(([e,ps])=>{const open=!!state.expandedEntities[e],total=ps.reduce((s,p)=>s+productValue(p),0);return `<div class="entity-head" onclick="toggleEntity(${JSON.stringify(e)})"><div><span class="chevron">${open?"▼":"▶"}</span><span class="entity-name">${esc(e)}</span><div class="meta">${ps.length} producto${ps.length===1?"":"s"}</div></div><div class="entity-total">${money(total)}</div></div>${open?`<div class="entity-products">${filterProducts(ps).map(productCard).join("")||empty()}</div>`:""}`}).join("")||empty()}</div>`;
-}
-function categoriesView(g){
- return `<div class="card"><div class="section-title"><h2>Productos por categoría</h2></div>${Object.entries(g).map(([k,ps])=>`<div class="section"><h3>${esc(k)} <span class="muted">· ${money(ps.reduce((s,p)=>s+productValue(p),0))}</span></h3>${filterProducts(ps).map(productCard).join("")||empty()}</div>`).join("")}</div>`;
-}
-function productCard(p){
- const q=qtyFor(p.id), v=productValue(p), status=valuationStatus(p);
- return `<div class="product" onclick="openProduct('${p.id}')"><div><div class="name">${esc(p.nombre)}</div><span class="badge">${esc(typeName(p))}</span>${p.isin?`<span class="badge">ISIN ${esc(p.isin)}</span>`:""}${p.ticker?`<span class="badge">${esc(p.ticker)}</span>`:""}<div class="meta">${esc(entityName(p))} · ${esc(status)}</div></div><div class="value">${v||isAccount(p)?money(v):"—"}${valuationBadge(p)}<div class="meta">${q?esc(q.toLocaleString("es-ES",{maximumFractionDigits:8}))+" títulos":""}</div></div></div>`;
-}
-function libraryView(){
- return `<div class="grid"><div class="card"><div class="section-title"><h2>Entidades globales</h2></div>${state.masterEntities.map(e=>`<div class="row"><span><b>${esc(e.nombre)}</b><br><small class="muted">${esc(e.tipo||"")}${e.nif?" · "+esc(e.nif):""}</small></span>${e.verificado?"<span class='badge'>Verificada</span>":""}</div>`).join("")||empty()}</div><div class="card"><div class="section-title"><h2>Productos globales</h2></div>${state.masterProducts.map(p=>`<div class="row"><span><b>${esc(p.nombre)}</b><br><small class="muted">${esc(p.isin||"")}${p.ticker?" · "+esc(p.ticker):""}</small></span><span class="badge">${esc(state.types.find(t=>t.id===p.tipo_producto_id)?.nombre||"")}</span></div>`).join("")||empty()}</div></div>`;
-}
-function sourcesView(){
- return `<div class="card"><div class="section-title"><h2>Fuentes de cotización</h2><span class="muted">${state.sources.length} fuentes</span></div>${state.sources.map(s=>`<div class="row"><span><b>${esc(s.nombre)}</b><br><small class="muted">${esc(s.tipo_fuente||"")} · ${s.tiempo_real?"Tiempo real":"Fin de día"} · ${s.gratuita?"Gratis":"De pago"}</small></span><b>${s.puntuacion??"—"}</b></div>`).join("")||empty()}</div>`;
-}
-function accountHistory(id){
- const hist=state.valuations.filter(v=>v.producto_id===id).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
- return `<h3>Histórico de saldo</h3>${hist.length?`<table><thead><tr><th>Fecha</th><th>Saldo</th><th>Diferencia</th></tr></thead><tbody>${hist.map((v,i)=>{const older=hist[i+1];const diff=older?Number(v.valor_total||0)-Number(older.valor_total||0):null;const cls=diff>0?'style="color:var(--green);font-weight:800"':diff<0?'style="color:var(--red);font-weight:800"':'';return `<tr><td>${dateES(v.fecha)}</td><td>${money(v.valor_total)}</td><td ${cls}>${diff==null?"—":(diff>=0?"+":"")+money(diff)}</td></tr>`}).join("")}</tbody></table>`:`<div class="empty">No hay históricos de saldo para esta cuenta.</div>`}`;
-}
-function openProduct(id){
- const p=state.products.find(x=>x.id===id), ops=state.ops.filter(o=>o.producto_id===id).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
- const q=qtyFor(id),v=productValue(p),lq=latestQuote(id),lv=latestVal(id),account=isAccount(p);
- document.getElementById("modalContent").innerHTML=`<div class="top"><div><h2>${esc(p.nombre)}</h2><div class="meta">${esc(entityName(p))} · ${esc(typeName(p))}</div></div><button class="btn secondary" onclick="closeModal()">Cerrar</button></div><p><span class="badge">${account?"Saldo":"Posición"} ${account?money(v):q.toLocaleString("es-ES",{maximumFractionDigits:8})}</span> ${!account?`<span class="badge">Valor ${v?money(v):"Sin valoración actual"}</span>`:""}</p>${p.isin?`<p>ISIN: <b>${esc(p.isin)}</b></p>`:""}${p.ticker?`<p>Ticker: <b>${esc(p.ticker)}</b></p>`:""}${account?accountHistory(id):`<><h3>Operaciones</h3><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Títulos</th><th>Precio</th></tr></thead><tbody>${ops.map(o=>`<tr><td>${dateES(o.fecha)}</td><td>${esc(o.tipo_operacion)}</td><td>${Number(o.cantidad).toLocaleString("es-ES",{maximumFractionDigits:8})}</td><td>${money(o.precio_unitario)}</td></tr>`).join("")}</tbody></table>${lq?`<p class="muted">Última cotización: ${dateES(lq.fecha)} · ${Number(lq.cierre).toLocaleString("es-ES",{maximumFractionDigits:6})} ${esc(lq.moneda||"")}</p>`:""}${lv?`<p class="muted">Última valoración: ${dateES(lv.fecha)} · ${money(lv.valor_total)}</p>`:""}${(!lq||!isFresh(lq.fecha,10))&&(!lv||!isFresh(lv.fecha,45))?`<div class="notice">No existe una valoración suficientemente reciente. El valor actual no se calcula con datos antiguos.</div>`:""}</>`}`;
- document.getElementById("modal").classList.add("open");
-}
-function closeModal(){document.getElementById("modal").classList.remove("open")}
-function newEntity(){document.getElementById("modalContent").innerHTML=`<h2>Nueva entidad</h2><div class="notice">La entidad personal se vincula a la biblioteca global. Si ya existe, debe reutilizarse; si no existe, queda pendiente de incorporarse al catálogo global.</div><div class="form"><label>Nombre<input id="enombre"></label><label>Tipo<input id="etipo" placeholder="Banco, broker..."></label></div><br><button class="btn" onclick="saveEntity()">Guardar</button> <button class="btn secondary" onclick="closeModal()">Cancelar</button>`;document.getElementById("modal").classList.add("open")}
-async function saveEntity(){let nombre=document.getElementById("enombre").value.trim(),tipo=document.getElementById("etipo").value.trim();if(!nombre)return alert("Indica el nombre.");let {error}=await db.from("entidades_financieras").insert({user_id:state.user.id,nombre,tipo,activo:true});if(error)alert(error.message);else{closeModal();await load()}}
-function newProduct(){document.getElementById("modalContent").innerHTML=`<h2>Nuevo producto</h2><div class="notice">Primero se busca en la biblioteca global por ISIN, ticker o nombre. Esta pantalla crea la ficha de usuario; las cotizaciones nunca forman parte de la ficha global.</div><div class="form"><label>Nombre<input id="pnombre"></label><label>ISIN<input id="pisin"></label><label>Ticker<input id="pticker"></label><label>Moneda<input id="pmoneda" value="EUR"></label><label class="full">Tipo<select id="ptipo">${state.types.map(t=>`<option value="${t.id}">${esc(t.nombre)}</option>`).join("")}</select></label><label class="full">Entidad<select id="pentity">${state.entities.map(e=>`<option value="${e.id}">${esc(e.nombre)}</option>`).join("")}</select></label></div><br><button class="btn" onclick="saveProduct()">Guardar</button> <button class="btn secondary" onclick="closeModal()">Cancelar</button>`;document.getElementById("modal").classList.add("open")}
-async function saveProduct(){let nombre=document.getElementById("pnombre").value.trim(),isin=document.getElementById("pisin").value.trim()||null,ticker=document.getElementById("pticker").value.trim()||null,moneda=document.getElementById("pmoneda").value.trim()||"EUR",tipo_producto_id=document.getElementById("ptipo").value,entidad_financiera_id=document.getElementById("pentity").value;if(!nombre)return alert("Indica el nombre.");let master=state.masterProducts.find(p=>(isin&&p.isin===isin)||(ticker&&p.ticker===ticker)||p.nombre.toLowerCase()===nombre.toLowerCase());let {error}=await db.from("productos").insert({user_id:state.user.id,entidad_financiera_id,tipo_producto_id,nombre,isin,ticker,moneda,activo:true,producto_maestro_id:master?.id||null,entidad_maestra_id:state.entities.find(e=>e.id===entidad_financiera_id)?.entidad_maestra_id||null});if(error)alert(error.message);else{closeModal();await load()}}
-async function refresh(){await load()}
-db.auth.onAuthStateChange((_e,_s)=>{if(!_s)setTimeout(load,0)});
-load().catch(e=>{document.getElementById("app").innerHTML=`<div class="wrap"><div class="card error"><h2>Error al cargar Patrimonio</h2><p>${esc(e.message||e)}</p><button class="btn" onclick="load()">Reintentar</button></div></div>`});
-</script>
-</body>
-</html>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Patrimonio</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><style>:root{--b:#214889;--bg:#f4f6fb;--c:#fff;--t:#14213d;--m:#71809b;--l:#dfe5ef;--g:#198754;--r:#c0392b;--w:#765c13}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Inter,system-ui,-apple-system,Segoe UI,Arial;color:var(--t)}.wrap{max-width:1380px;margin:auto;padding:24px}.top,.entity-head,.product,.row{display:flex;justify-content:space-between;gap:15px}.top{align-items:center}.brand h1{margin:0;font-size:34px}.brand p,.meta,.muted{color:var(--m)}button,input,select{font:inherit}.btn{border:0;border-radius:12px;padding:11px 16px;font-weight:700;cursor:pointer;background:var(--b);color:#fff}.btn.secondary{background:#fff;color:var(--b);border:1px solid var(--l)}.tabs,.actions{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}.tab{border:1px solid var(--l);background:#fff;border-radius:28px;padding:11px 18px;font-weight:800;cursor:pointer}.tab.active{background:var(--b);color:#fff}.hero{background:linear-gradient(135deg,#204784,#3269c9);color:#fff;border-radius:22px;padding:28px;margin-bottom:18px}.total{font-size:48px;font-weight:900;margin:5px 0 20px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.stat{background:#ffffff24;padding:15px;border-radius:14px}.stat b{display:block;font-size:21px;margin-top:5px}.card{background:var(--c);border:1px solid var(--l);border-radius:18px;padding:20px;box-shadow:0 5px 18px #14213d0a}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.search{flex:1;min-width:260px;padding:12px 15px;border:1px solid var(--l);border-radius:12px;background:#fff}.row{align-items:center;padding:11px 0;border-bottom:1px solid var(--l)}.entity-head{align-items:center;padding:17px 0;border-bottom:1px solid var(--l);cursor:pointer}.entity-name{font-size:20px;font-weight:850}.entity-total{font-size:20px;font-weight:900;white-space:nowrap}.entity-products{padding:0 0 12px 20px}.product{align-items:center;padding:15px 0;border-bottom:1px solid var(--l);cursor:pointer}.product .name{font-weight:850}.value{font-weight:900;font-size:19px;text-align:right;white-space:nowrap}.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#edf3ff;color:#2459b0;font-size:12px;font-weight:800;margin:2px}.ok{background:#eaf7ef;color:#176b42}.warn{background:#fff7df;color:var(--w)}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;border-bottom:1px solid var(--l);font-size:14px}th{color:var(--m)}.bar{height:9px;background:#e8edf5;border-radius:99px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:#3269c9}.modal{position:fixed;inset:0;background:#0a142080;display:none;align-items:center;justify-content:center;padding:20px;z-index:20}.modal.open{display:flex}.modalbox{background:#fff;border-radius:18px;max-width:920px;width:100%;max-height:90vh;overflow:auto;padding:22px}.form{display:grid;grid-template-columns:1fr 1fr;gap:12px}.form label{font-weight:700;font-size:13px}.form input,.form select{width:100%;margin-top:5px;padding:11px;border:1px solid var(--l);border-radius:10px}.full{grid-column:1/-1}.notice{padding:14px;border-radius:12px;background:#fff7df;color:var(--w);margin:12px 0}.error{background:#fff0ef;color:#9c2c20}.empty{text-align:center;padding:30px;color:var(--m)}@media(max-width:850px){.stats,.grid{grid-template-columns:1fr 1fr}.form{grid-template-columns:1fr}}@media(max-width:560px){.wrap{padding:14px}.stats,.grid{grid-template-columns:1fr}.total{font-size:38px}.entity-head,.product{display:block}.value{margin-top:8px;text-align:left}}</style></head><body><div id="app"></div><div id="modal" class="modal"><div class="modalbox"><div id="modalContent"></div></div></div><script>
+const SUPABASE_URL="https://rnwtvkhnhybdgxhmgebw.supabase.co",SUPABASE_KEY="sb_publishable_r00Qvz_GBmRi4fVj6O7scA_jIj9wuyN",db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);let state={user:null,products:[],entities:[],types:[],ops:[],valuations:[],quotes:[],tab:"entidades",search:"",expanded:{}};
+const money=n=>new Intl.NumberFormat("es-ES",{style:"currency",currency:"EUR"}).format(Number(n)||0),dateES=d=>d?new Intl.DateTimeFormat("es-ES").format(new Date(d+"T00:00:00")):"—",esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+function typeName(p){return state.types.find(t=>t.id===p.tipo_producto_id)?.nombre||"Sin categoría"}function entityName(p){return state.entities.find(e=>e.id===p.entidad_financiera_id)?.nombre||"Sin entidad"}function isAccount(p){return ["Cuenta corriente","Cuenta de ahorro","Cuenta de inversión"].includes(typeName(p))}function opSign(o){return /venta|retirada|salida/i.test(o.tipo_operacion||"")?-1:1}function qtyFor(id){return state.ops.filter(o=>o.producto_id===id).reduce((s,o)=>s+opSign(o)*Number(o.cantidad||0),0)}function latest(a,key){let m={};for(const x of a)if(!m[x[key]]||String(x.fecha)>String(m[x[key]].fecha))m[x[key]]=x;return m}function latestVal(id){return latest(state.valuations,"producto_id")[id]}function latestQuote(id){return latest(state.quotes,"producto_id")[id]}function fresh(d,n){if(!d)return false;let x=new Date(d+"T00:00:00"),now=new Date();return x<=now&&((now-x)/86400000)<=n}
+function value(p){let v=latestVal(p.id);if(isAccount(p))return v?.valor_total!=null?Number(v.valor_total):0;if(v?.valor_total!=null&&fresh(v.fecha,45))return Number(v.valor_total);let q=latestQuote(p.id),qty=qtyFor(p.id);return q?.cierre!=null&&fresh(q.fecha,10)&&qty?Number(q.cierre)*qty*Number(q.factor_conversion||1):0}
+function status(p){let v=latestVal(p.id),q=latestQuote(p.id);if(isAccount(p))return v?`saldo ${dateES(v.fecha)}`:"sin saldo";if(q&&fresh(q.fecha,10))return `cotización ${dateES(q.fecha)}`;if(v&&fresh(v.fecha,45))return `valoración ${dateES(v.fecha)}`;if(q)return `cotización antigua ${dateES(q.fecha)}`;if(v)return `valoración antigua ${dateES(v.fecha)}`;return "sin valoración actual"}
+function badge(p){let v=latestVal(p.id),q=latestQuote(p.id);if(isAccount(p))return v?`<span class="badge ok">Saldo ${dateES(v.fecha)}</span>`:`<span class="badge warn">Sin saldo</span>`;if(q&&fresh(q.fecha,10))return `<span class="badge ok">Cotización ${dateES(q.fecha)}</span>`;if(v&&fresh(v.fecha,45))return `<span class="badge ok">Valoración ${dateES(v.fecha)}</span>`;return `<span class="badge warn">Sin valoración actual</span>`}
+async function pagedQuotes(uid){let all=[],from=0,step=1000;while(true){let {data,error}=await db.from("cotizaciones_historicas").select("*").eq("user_id",uid).order("fecha",{ascending:false}).range(from,from+step-1);if(error)throw error;all=all.concat(data||[]);if(!data||data.length<step)break;from+=step}return all}
+async function load(){let {data:{user},error}=await db.auth.getUser();if(error)throw error;state.user=user;if(!user){loginView();return}let uid=user.id;let results=await Promise.all([db.from("productos").select("*").eq("user_id",uid),db.from("entidades_financieras").select("*").eq("user_id",uid),db.from("tipos_productos").select("*").eq("activo",true).order("orden_presentacion"),db.from("operaciones").select("*").eq("user_id",uid).order("fecha"),db.from("valoraciones_historicas").select("*").eq("user_id",uid).order("fecha"),pagedQuotes(uid)]);let names=["products","entities","types","ops","valuations","quotes"];for(let i=0;i<results.length;i++){if(results[i].error)throw results[i].error;state[names[i]]=results[i].data||results[i]||[]}render()}
+function loginView(){app.innerHTML=`<div class="wrap"><div class="card" style="max-width:420px;margin:100px auto"><h1>Patrimonio</h1><div class="form"><label class="full">Email<input id="email" type="email"></label><label class="full">Contraseña<input id="password" type="password"></label></div><br><button class="btn" onclick="login()">Entrar</button><p id="msg"></p></div></div>`}async function login(){let {error}=await db.auth.signInWithPassword({email:email.value,password:password.value});if(error)msg.innerHTML=`<span class="error">${esc(error.message)}</span>`;else load()}async function logout(){await db.auth.signOut();load()}
+function groups(){let g={};state.products.slice().sort((a,b)=>entityName(a).localeCompare(entityName(b),"es")||typeName(a).localeCompare(typeName(b),"es")||a.nombre.localeCompare(b.nombre,"es")).forEach(p=>(g[entityName(p)]??=[]).push(p));return g}function total(){return state.products.reduce((s,p)=>s+value(p),0)}function filtered(ps){let q=state.search.toLowerCase().trim();return q?ps.filter(p=>(p.nombre+" "+(p.isin||"")+" "+(p.ticker||"")+" "+entityName(p)).toLowerCase().includes(q)):ps}
+function productCard(p){let q=qtyFor(p.id),v=value(p);return `<div class="product" onclick="openProduct('${p.id}')"><div><div class="name">${esc(p.nombre)}</div><span class="badge">${esc(typeName(p))}</span>${p.isin?`<span class="badge">ISIN ${esc(p.isin)}</span>`:""}${p.ticker?`<span class="badge">${esc(p.ticker)}</span>`:""}<div class="meta">${esc(status(p))}</div></div><div class="value">${isAccount(p)||v?money(v):"—"}${badge(p)}<div class="meta">${q?esc(q.toLocaleString("es-ES",{maximumFractionDigits:8}))+" títulos":""}</div></div></div>`}
+function entitiesView(){let g=groups();return `<div class="card"><div class="section-title"><h2>Entidades</h2><button class="btn secondary" onclick="newEntity()">＋ Nueva entidad</button></div><p class="muted">Las entidades aparecen contraídas. Pulsa una para desplegar todos sus productos.</p>${Object.entries(g).map(([e,ps])=>{let open=!!state.expanded[e],tot=ps.reduce((s,p)=>s+value(p),0);return `<div class="entity-head" onclick="toggleEntity(${JSON.stringify(e)})"><div><div><span>${open?"▼":"▶"}</span> <span class="entity-name">${esc(e)}</span></div><div class="meta">${ps.length} producto${ps.length===1?"":"s"}</div></div><div class="entity-total">${money(tot)}</div></div>${open?`<div class="entity-products">${filtered(ps).map(productCard).join("")||empty()}</div>`:""}`}).join("")||empty()}</div>`}
+function summary(){let g=groups();return `<div class="hero"><small>Patrimonio total</small><div class="total">${money(total())}</div><div class="stats"><div class="stat">Cuentas<b>${money(state.products.filter(isAccount).reduce((s,p)=>s+value(p),0))}</b></div><div class="stat">Inversiones<b>${money(state.products.filter(p=>!isAccount(p)).reduce((s,p)=>s+value(p),0))}</b></div><div class="stat">Productos<b>${state.products.length}</b></div><div class="stat">Entidades<b>${Object.keys(g).length}</b></div></div></div><div class="actions"><button class="btn" onclick="load()">🔄 Actualizar</button><input class="search" placeholder="🔎 Buscar producto, ISIN o entidad" value="${esc(state.search)}" oninput="state.search=this.value;render()"></div><div class="card"><h2>Estado de valoración</h2><p>Las cotizaciones se cargan por páginas y ordenadas de más reciente a más antigua, evitando que Supabase entregue solo las primeras cotizaciones históricas y termine usando 2003 como valor actual.</p><p class="muted">Las cotizaciones antiguas no se utilizan para calcular el patrimonio actual.</p></div>`}
+function toggleEntity(e){state.expanded[e]=!state.expanded[e];render()}function empty(){return `<div class="empty">No hay datos para mostrar.</div>`}function render(){app.innerHTML=`<div class="wrap"><div class="top"><div class="brand"><h1>Patrimonio</h1><p>Tu patrimonio, en un solo lugar</p></div><button class="btn secondary" onclick="logout()">Salir</button></div><div class="tabs"><button class="tab ${state.tab==='resumen'?'active':''}" onclick="state.tab='resumen';render()">🏠 Resumen</button><button class="tab ${state.tab==='entidades'?'active':''}" onclick="state.tab='entidades';render()">🏛️ Entidades</button></div>${state.tab==='resumen'?summary():entitiesView()}</div>`}
+function accountHistory(id){let h=state.valuations.filter(v=>v.producto_id===id).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));return `<h3>Histórico de saldo</h3>${h.length?`<table><thead><tr><th>Fecha</th><th>Saldo</th><th>Diferencia</th></tr></thead><tbody>${h.map((v,i)=>{let old=h[i+1],d=old?Number(v.valor_total||0)-Number(old.valor_total||0):null;return `<tr><td>${dateES(v.fecha)}</td><td>${money(v.valor_total)}</td><td style="font-weight:800;color:${d>0?'var(--g)':d<0?'var(--r)':'inherit'}">${d==null?'—':(d>=0?'+':'')+money(d)}</td></tr>`}).join("")}</tbody></table>`:empty()}`}
+function openProduct(id){let p=state.products.find(x=>x.id===id),v=value(p),q=latestQuote(id),lv=latestVal(id),ops=state.ops.filter(o=>o.producto_id===id).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));document.getElementById("modalContent").innerHTML=`<div class="top"><div><h2>${esc(p.nombre)}</h2><div class="meta">${esc(entityName(p))} · ${esc(typeName(p))}</div></div><button class="btn secondary" onclick="closeModal()">Cerrar</button></div>${isAccount(p)?accountHistory(id):`<p><span class="badge">Posición ${qtyFor(id).toLocaleString("es-ES",{maximumFractionDigits:8})}</span> <span class="badge">${v?money(v):"Sin valoración actual"}</span></p><h3>Operaciones</h3><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Títulos</th><th>Precio</th></tr></thead><tbody>${ops.map(o=>`<tr><td>${dateES(o.fecha)}</td><td>${esc(o.tipo_operacion)}</td><td>${Number(o.cantidad||0).toLocaleString("es-ES",{maximumFractionDigits:8})}</td><td>${money(o.precio_unitario)}</td></tr>`).join("")}</tbody></table>${q?`<p class="muted">Última cotización: ${dateES(q.fecha)} · ${Number(q.cierre).toLocaleString("es-ES",{maximumFractionDigits:6})}</p>`:""}${lv?`<p class="muted">Última valoración: ${dateES(lv.fecha)} · ${money(lv.valor_total)}</p>`:""}${!q||!fresh(q.fecha,10)?`<div class="notice">No se utiliza una cotización antigua para el valor actual.</div>`:""}`}`;modal.classList.add("open")}
+function closeModal(){modal.classList.remove("open")}
+function newEntity(){modalContent.innerHTML=`<h2>Nueva entidad</h2><div class="form"><label>Nombre<input id="enombre"></label><label>Tipo<input id="etipo" placeholder="Banco, broker..."></label></div><br><button class="btn" onclick="saveEntity()">Guardar</button> <button class="btn secondary" onclick="closeModal()">Cancelar</button>`;modal.classList.add("open")}async function saveEntity(){let nombre=enombre.value.trim(),tipo=etipo.value.trim();if(!nombre)return alert("Indica el nombre.");let {error}=await db.from("entidades_financieras").insert({user_id:state.user.id,nombre,tipo,activo:true});if(error)alert(error.message);else{closeModal();load()}}
+load().catch(e=>{app.innerHTML=`<div class="wrap"><div class="card error"><h2>Error al cargar Patrimonio</h2><p>${esc(e.message||e)}</p><button class="btn" onclick="load()">Reintentar</button></div></div>`});</script></body></html>
