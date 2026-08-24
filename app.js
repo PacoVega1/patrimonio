@@ -20,7 +20,7 @@ function costBasis(id){
   if(t==='Compra'||t==='Aportacion'||t==='Aportación'){add(q,Number(o.importe_neto)>0?Number(o.importe_neto):q*pu)}
   else if(t==='Venta'){let left=q;while(left>1e-12&&lots.length){const l=lots[0],take=Math.min(left,l.qty),u=l.qty?l.cost/l.qty:0;l.qty-=take;l.cost-=take*u;left-=take;if(l.qty<=1e-12)lots.shift()}}
   else if(t==='Acciones liberadas'||t==='Dividendo en acciones'){if(lots.length){const totalQty=lots.reduce((a,l)=>a+l.qty,0);for(const l of lots)l.qty+=q*(l.qty/totalQty)}else add(q,0)}
-  else if(t==='Split'){for(const l of lots)l.qty*=q}
+  else if(t==='Split'){if(lots.length){const totalQty=lots.reduce((a,l)=>a+l.qty,0);if(totalQty>0){for(const l of lots)l.qty+=q*(l.qty/totalQty)}}else add(q,0)}
   else if((t==='Ajuste de posición'||t==='Traspaso')&&q>0)add(q,q*pu);
  }
  const totalQty=lots.reduce((a,l)=>a+l.qty,0),totalCost=lots.reduce((a,l)=>a+l.cost,0);
