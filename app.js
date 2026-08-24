@@ -39,7 +39,24 @@ function diff(p){const c=cost(p);return c==null?val(p)-oldVal(p):val(p)-c}
 function pct(p){const c=cost(p);return c?diff(p)/c*100:0}
 function groups(){const g={};active().forEach(p=>(g[p.entidad_financiera_id]??=[]).push(p));return g}
 async function latestQuotes(ids){const out=[];await Promise.all(ids.map(async id=>{const r=await db.from('cotizaciones_historicas').select('producto_id,fecha,cierre,factor_conversion').eq('producto_id',id).order('fecha',{ascending:false}).limit(1);if(!r.error&&r.data?.[0])out.push(r.data[0])}));S.q.push(...out);return out}
-async function ensureQuotes(id){if(S.qLoaded[id])return histQ(id);const r=await db.from('cotizaciones_historicas').select('producto_id,fecha,cierre,factor_conversion').eq('producto_id',id).order('fecha',{ascending:false});if(r.error)throw r.error;S.q=S.q.filter(x=>x.producto_id!==id).concat(r.data||[]);S.qLoaded[id]=true;return r.data||[]}
+async function ensureQuotes(id){
+ if(S.qLoaded[id])return histQ(id);
+ const p=S.p.find(x=>x.id===id), isPension=p&&String(tn(p)).toLowerCase().includes('pension');
+ const [qr,vr]=await Promise.all([
+  db.from('cotizaciones_historicas').select('producto_id,fecha,cierre,factor_conversion').eq('producto_id',id).order('fecha',{ascending:false}),
+  isPension?db.from('valoraciones_historicas').select('producto_id,fecha,valor_total,moneda,origen,fuente,es_valida').eq('producto_id',id).eq('es_valida',true).order('fecha',{ascending:false}):Promise.resolve({data:[],error:null})
+ ]);
+ if(qr.error)throw qr.error;
+ const q=qr.data||[], v=vr.data||[];
+ // Los planes de pensiones tienen el histórico real en valoraciones_historicas.
+ // Para evitar duplicados, las valoraciones son la fuente histórica cuando existe ese dato.
+ const merged=new Map();
+ q.forEach(x=>merged.set(x.fecha,{...x,valoracion:false}));
+ v.forEach(x=>merged.set(x.fecha,{producto_id:id,fecha:x.fecha,cierre:Number(x.valor_total),factor_conversion:1,valoracion:true,origen:x.origen,fuente:x.fuente}));
+ S.q=S.q.filter(x=>x.producto_id!==id).concat([...merged.values()]);
+ S.qLoaded[id]=true;
+ return [...merged.values()].sort((x,y)=>String(y.fecha).localeCompare(String(x.fecha)));
+}
 async function load(){try{let u=null;try{const gr=await db.auth.getUser();if(gr.error)throw gr.error;u=gr.data?.user||null}catch(authErr){await db.auth.signOut({scope:'local'});login();return}if(!u){login();return}S.user=u;const [p,e,t,o,v,i,d,s]=await Promise.all([db.from('productos').select('*').eq('user_id',u.id),db.from('entidades_financieras').select('*').eq('user_id',u.id),db.from('tipos_productos').select('*').eq('activo',true).order('orden_presentacion'),db.from('operaciones').select('*').eq('user_id',u.id).order('fecha'),db.from('valoraciones_historicas').select('*').eq('user_id',u.id).order('fecha'),db.from('intereses_cuentas').select('*').eq('user_id',u.id).order('fecha',{ascending:false}),db.from('documentos_capturas').select('*').eq('user_id',u.id).order('fecha_documento',{ascending:false}),db.from('fuentes_valoracion').select('*').order('puntuacion',{ascending:false})]);for(const r of [p,e,t,o,v,i,d,s])if(r.error)throw r.error;S.p=p.data||[];S.e=e.data||[];S.t=t.data||[];S.o=o.data||[];S.v=v.data||[];S.i=i.data||[];S.docs=d.data||[];S.sources=s.data||[];S.q=[];await latestQuotes(active().filter(p=>!account(p)).map(p=>p.id));render()}catch(e){$('app').innerHTML='<div class="wrap"><div class="card error"><h2>Error al cargar Patrimonio</h2><p>'+esc(e.message||e)+'</p><button class="btn" onclick="load()">Reintentar</button></div></div>'}}
 function login(){$('app').innerHTML='<div class="wrap"><div class="card" style="max-width:430px;margin:100px auto"><h1>Patrimonio</h1><label>Email<input id="em"></label><br><label>Contraseña<input id="pw" type="password"></label><br><button class="btn" onclick="goLogin()">Entrar</button><p id="err"></p></div></div>'}
 async function goLogin(){const r=await db.auth.signInWithPassword({email:$('em').value,password:$('pw').value});if(r.error)$('err').innerHTML='<div class="error">'+esc(r.error.message)+'</div>';else load()}
