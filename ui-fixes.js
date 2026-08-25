@@ -81,8 +81,8 @@
     /* ORDEN DEFINITIVO ACORDADO:
        1 Fecha
        2 Nº aportación
-       3 Importe aportación
-       4 Aportaciones anteriores
+       3 Aportaciones anteriores
+       4 Importe aportación
        5 Total aportado
        6 Participaciones de la aportación
        7 Total participaciones
@@ -90,8 +90,8 @@
     const ordenHeaders=[
       'FECHA',
       'Nº APORTACIÓN',
-      'IMPORTE APORTACIÓN',
       'APORTACIONES ANTERIORES',
+      'IMPORTE APORTACIÓN',
       'TOTAL APORTADO',
       'PARTICIPACIONES APORTACIÓN',
       'TOTAL PARTICIPACIONES',
@@ -122,14 +122,14 @@
     data.forEach(r=>{
       const fecha=fechaES(r[idx.fecha]);
       const numero=r[idx.numero]||'';
-      const importe=r[idx.importe]||'';
       const anteriores=r[idx.anteriores]||'';
+      const importe=r[idx.importe]||'';
       const total=r[idx.total]||'';
       const partAport=r[idx.part]||'';
       const n=num(numero);
       const totalPart=n!=null&&acumulado[n]!=null?fmt3(acumulado[n]):'';
       const tipo=r[idx.tipo]||'';
-      const vals=[fecha,numero,importe,anteriores,total,partAport,totalPart,tipo];
+      const vals=[fecha,numero,anteriores,importe,total,partAport,totalPart,tipo];
       const tr=document.createElement('tr');
       vals.forEach(v=>{
         const td=document.createElement('td');
