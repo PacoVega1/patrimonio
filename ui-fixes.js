@@ -1,156 +1,30 @@
-/* Correcciones definitivas de fechas y tabla de operaciones de planes */
+/* Corrección definitiva de la tabla de operaciones de planes de pensiones.
+   Orden acordado:
+   FECHA | Nº APORTACIÓN | APORTACIONES ANTERIORES | IMPORTE APORTACIÓN |
+   TOTAL APORTADO | PARTICIPACIONES APORTACIÓN | TOTAL PARTICIPACIONES | TIPO
+*/
 (function(){
   'use strict';
-
-  const key=s=>String(s??'').trim().toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .replace(/[º°]/g,'o');
-
-  function fechaES(v){
-    const s=String(v??'').trim();
-    let m=s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})(?:[T ].*)?$/);
-    if(m)return `${m[3].padStart(2,'0')}/${m[2].padStart(2,'0')}/${m[1]}`;
-    m=s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/);
-    if(m)return `${m[1].padStart(2,'0')}/${m[2].padStart(2,'0')}/${m[3]}`;
-    return s;
+  const norm=s=>String(s??'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[º°]/g,'o');
+  function fechaES(v){const s=String(v??'').trim();let m=s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})(?:[T ].*)?$/);if(m)return `${m[3].padStart(2,'0')}/${m[2].padStart(2,'0')}/${m[1]}`;m=s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/);if(m)return `${m[1].padStart(2,'0')}/${m[2].padStart(2,'0')}/${m[3]}`;return s;}
+  function parseNum(v){let s=String(v??'').trim().replace(/€|\s/g,'');if(!s)return null;if(s.includes(',')&&s.includes('.'))s=s.replace(/\./g,'').replace(',','.');else if(s.includes(','))s=s.replace(',','.');const n=Number(s.replace(/[^0-9+\-.]/g,''));return Number.isFinite(n)?n:null;}
+  function fmt3(n){if(n==null||!Number.isFinite(n))return '';return new Intl.NumberFormat('es-ES',{minimumFractionDigits:3,maximumFractionDigits:3}).format(n);}
+  function formatDates(){const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT),a=[];while(w.nextNode())a.push(w.currentNode);const rx=/\b(?:\d{4}[-\/]\d{1,2}[-\/]\d{1,2}|\d{1,2}[-\/]\d{1,2}[-\/]\d{4})\b/g;a.forEach(n=>{const p=n.parentElement;if(!p||['SCRIPT','STYLE','INPUT','TEXTAREA','OPTION'].includes(p.tagName))return;n.nodeValue=n.nodeValue.replace(rx,x=>fechaES(x));});}
+  function fixOperationsTable(table){
+    const rows=[...table.querySelectorAll('tr')];if(!rows.length)return;const header=rows[0];const hs=[...header.children].map(x=>norm(x.textContent));
+    if(!hs.some(x=>x==='fecha'||x.startsWith('fecha')))return;if(!hs.some(x=>x.includes('aportaciones anteriores')))return;if(!hs.some(x=>x.includes('aportacion actual')||x.includes('importe aportacion')))return;
+    const body=table.querySelector('tbody');const dataRows=body?[...body.querySelectorAll('tr')]:rows.slice(1);if(!dataRows.length)return;
+    const desired=['fecha','n aportacion','aportaciones anteriores','importe aportacion','total aportado','participaciones aportacion','total participaciones','tipo'];
+    if(hs.length>=8&&hs.slice(0,8).every((h,i)=>h===desired[i]))return;
+    const records=dataRows.map(tr=>[...tr.children].map(td=>td.textContent.trim()));
+    const idx=(tests,backup)=>{const i=hs.findIndex(h=>tests.some(t=>h===t||h.includes(t)));return i>=0?i:backup;};
+    const fechaI=idx(['fecha'],0),tipoI=idx(['tipo'],1),anterioresI=idx(['aportaciones anteriores'],2),importeI=idx(['aportacion actual','importe aportacion'],3),totalI=idx(['total aportado'],4),numeroI=idx(['n aportaciones','n aportacion','numero aportaciones','numero aportacion'],5),partI=idx(['participaciones aportacion','participaciones de la aportacion','participaciones'],6);
+    const partRows=records.map(r=>parseNum(r[partI])),ascending=records.map((_,i)=>i).sort((a,b)=>String(records[a][fechaI]||'').localeCompare(String(records[b][fechaI]||''))),cumulative={};let totalParticipaciones=0;
+    ascending.forEach(i=>{const p=partRows[i];if(p!=null)totalParticipaciones+=p;cumulative[i]=totalParticipaciones;});
+    const out=records.map((r,i)=>{const vals=[fechaES(r[fechaI]),r[numeroI]||'',r[anterioresI]||'',r[importeI]||'',r[totalI]||'',r[partI]||'',fmt3(cumulative[i]),r[tipoI]||''];const tr=document.createElement('tr');vals.forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.appendChild(td);});return tr;});
+    header.innerHTML='';const labels=['FECHA','Nº APORTACIÓN','APORTACIONES ANTERIORES','IMPORTE APORTACIÓN','TOTAL APORTADO','PARTICIPACIONES APORTACIÓN','TOTAL PARTICIPACIONES','TIPO'];labels.forEach(text=>{const th=document.createElement('th');th.textContent=text;header.appendChild(th);});
+    if(body){body.innerHTML='';out.forEach(tr=>body.appendChild(tr));}else out.forEach(tr=>table.appendChild(tr));
   }
-
-  function normalizarFechas(){
-    const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
-    const nodes=[];
-    while(walker.nextNode())nodes.push(walker.currentNode);
-    const rx=/\b(?:\d{4}[-\/]\d{1,2}[-\/]\d{1,2}|\d{1,2}[-\/]\d{1,2}[-\/]\d{4})\b/g;
-    nodes.forEach(n=>{
-      const p=n.parentElement;
-      if(!p||['SCRIPT','STYLE','INPUT','TEXTAREA','OPTION'].includes(p.tagName))return;
-      n.nodeValue=n.nodeValue.replace(rx,x=>fechaES(x));
-    });
-  }
-
-  function num(v){
-    const s=String(v??'').trim().replace(/\./g,'').replace(',','.');
-    const n=Number(s);
-    return Number.isFinite(n)?n:null;
-  }
-  function fmt3(n){
-    return new Intl.NumberFormat('es-ES',{minimumFractionDigits:3,maximumFractionDigits:3}).format(n);
-  }
-
-  function corregirTabla(table){
-    let trHead=table.querySelector('thead tr');
-    const allRows=[...table.querySelectorAll('tr')];
-    if(!trHead)trHead=allRows[0];
-    if(!trHead)return;
-
-    const headerCells=[...trHead.children];
-    const headers=headerCells.map(c=>key(c.textContent));
-    const hasAnterior=headers.some(h=>h.includes('aportaciones anteriores'));
-    const hasImporte=headers.some(h=>h.includes('aportacion actual')||h.includes('importe aportacion'));
-    if(!hasAnterior||!hasImporte)return;
-
-    const find=tests=>headers.findIndex(h=>tests.some(t=>h===t||h.includes(t)));
-    const idx={
-      fecha:find(['fecha']),
-      tipo:find(['tipo']),
-      anteriores:find(['aportaciones anteriores']),
-      importe:find(['aportacion actual','importe aportacion']),
-      total:find(['total aportado']),
-      numero:find(['n aportaciones','n aportacion','numero aportaciones','numero aportacion']),
-      part:find(['participaciones aportacion','participaciones de la aportacion','participaciones'])
-    };
-    if(Object.values(idx).some(i=>i<0))return;
-
-    const dataRows=table.querySelector('tbody')
-      ? [...table.querySelector('tbody').querySelectorAll('tr')]
-      : allRows.slice(1);
-    const data=dataRows.map(tr=>[...tr.children].map(td=>td.textContent.trim()));
-
-    const ops=(window.S&&Array.isArray(window.S.o))?window.S.o:[];
-    const productId=window.S?.context;
-    const contribs=ops
-      .filter(o=>o.producto_id===productId && ['Aportacion','Aportación'].includes(o.tipo_operacion||''))
-      .slice()
-      .sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha))||String(a.id||'').localeCompare(String(b.id||'')));
-    const acumulado=[];
-    let acc=0;
-    contribs.forEach((o,i)=>{
-      acc+=Number(o.cantidad)||0;
-      acumulado[i+1]=acc;
-    });
-
-    /* ORDEN DEFINITIVO ACORDADO:
-       1 Fecha
-       2 Nº aportación
-       3 Aportaciones anteriores
-       4 Importe aportación
-       5 Total aportado
-       6 Participaciones de la aportación
-       7 Total participaciones
-       8 Tipo */
-    const ordenHeaders=[
-      'FECHA',
-      'Nº APORTACIÓN',
-      'APORTACIONES ANTERIORES',
-      'IMPORTE APORTACIÓN',
-      'TOTAL APORTADO',
-      'PARTICIPACIONES APORTACIÓN',
-      'TOTAL PARTICIPACIONES',
-      'TIPO'
-    ];
-
-    let thead=table.querySelector('thead');
-    let tbody=table.querySelector('tbody');
-    if(!thead){
-      thead=document.createElement('thead');
-      table.insertBefore(thead,table.firstChild);
-    }
-    thead.innerHTML='';
-    const htr=document.createElement('tr');
-    ordenHeaders.forEach(h=>{
-      const th=document.createElement('th');
-      th.textContent=h;
-      htr.appendChild(th);
-    });
-    thead.appendChild(htr);
-
-    if(!tbody){
-      tbody=document.createElement('tbody');
-      table.appendChild(tbody);
-    }
-    tbody.innerHTML='';
-
-    data.forEach(r=>{
-      const fecha=fechaES(r[idx.fecha]);
-      const numero=r[idx.numero]||'';
-      const anteriores=r[idx.anteriores]||'';
-      const importe=r[idx.importe]||'';
-      const total=r[idx.total]||'';
-      const partAport=r[idx.part]||'';
-      const n=num(numero);
-      const totalPart=n!=null&&acumulado[n]!=null?fmt3(acumulado[n]):'';
-      const tipo=r[idx.tipo]||'';
-      const vals=[fecha,numero,anteriores,importe,total,partAport,totalPart,tipo];
-      const tr=document.createElement('tr');
-      vals.forEach(v=>{
-        const td=document.createElement('td');
-        td.textContent=v;
-        tr.appendChild(td);
-      });
-      tbody.appendChild(tr);
-    });
-  }
-
-  function aplicar(){
-    normalizarFechas();
-    document.querySelectorAll('table').forEach(corregirTabla);
-  }
-
-  let timer;
-  const obs=new MutationObserver(()=>{
-    clearTimeout(timer);
-    timer=setTimeout(aplicar,120);
-  });
-  obs.observe(document.body,{childList:true,subtree:true,characterData:true});
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',aplicar);
-  else aplicar();
+  function apply(){formatDates();document.querySelectorAll('table').forEach(fixOperationsTable);}
+  let timer;const observer=new MutationObserver(()=>{clearTimeout(timer);timer=setTimeout(apply,100);});observer.observe(document.body,{childList:true,subtree:true,characterData:true});if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply);else apply();
 })();
