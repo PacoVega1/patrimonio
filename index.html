@@ -24,7 +24,7 @@ button,input,select,textarea{font:inherit}.btn{border:0;border-radius:11px;paddi
 <div id="modal" class="modal"><div class="modalbox" id="modalBox"></div></div>
 <script>
 window.addEventListener('error',function(e){var a=document.getElementById('app');if(a){a.innerHTML='<div class="wrap"><div class="card error"><h2>No se ha podido cargar Patrimonio</h2><p>'+String(e.message||'Error desconocido')+'</p></div></div>';}});
-function cargarPatrimonio(){var s=document.createElement('script');s.src='./app.js?v=20260825-0400';s.onload=function(){var y=document.createElement('script');y.src='./yahoo-sync.js?v=20260825-0400';document.body.appendChild(y);};s.onerror=function(){document.getElementById('app').innerHTML='<div class="wrap"><div class="card error"><h2>No se ha podido cargar Patrimonio</h2><p>No se pudo cargar app.js.</p></div></div>';};document.body.appendChild(s);}
+function cargarPatrimonio(){var s=document.createElement('script');s.src='./app.js?v=20260825-0500';s.onload=function(){var y=document.createElement('script');y.src='./yahoo-sync.js?v=20260825-0500';document.body.appendChild(y);};s.onerror=function(){document.getElementById('app').innerHTML='<div class="wrap"><div class="card error"><h2>No se ha podido cargar Patrimonio</h2><p>No se pudo cargar app.js.</p></div></div>';};document.body.appendChild(s);}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onload="cargarPatrimonio()" onerror="document.getElementById('app').innerHTML='<div class=&quot;wrap&quot;><div class=&quot;card error&quot;><h2>No se ha podido cargar Patrimonio</h2><p>No se pudo cargar la biblioteca de Supabase.</p></div></div>'"></script>
 </body>
