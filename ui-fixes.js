@@ -37,13 +37,9 @@
   }
 
   function corregirTabla(table){
-    /* La aplicación actual puede generar el encabezado con <thead> o como el
-       primer <tr> del propio table. Admitimos ambas estructuras. */
     let trHead=table.querySelector('thead tr');
     const allRows=[...table.querySelectorAll('tr')];
-    if(!trHead){
-      trHead=allRows[0];
-    }
+    if(!trHead)trHead=allRows[0];
     if(!trHead)return;
 
     const headerCells=[...trHead.children];
@@ -69,9 +65,6 @@
       : allRows.slice(1);
     const data=dataRows.map(tr=>[...tr.children].map(td=>td.textContent.trim()));
 
-    /* Total de participaciones: acumulamos las participaciones de todas las
-       aportaciones reales del producto. El nº de aportación determina la fila
-       acumulada y no confundimos nº de aportación con nº de participaciones. */
     const ops=(window.S&&Array.isArray(window.S.o))?window.S.o:[];
     const productId=window.S?.context;
     const contribs=ops
@@ -85,19 +78,26 @@
       acumulado[i+1]=acc;
     });
 
+    /* ORDEN DEFINITIVO ACORDADO:
+       1 Fecha
+       2 Nº aportación
+       3 Importe aportación
+       4 Aportaciones anteriores
+       5 Total aportado
+       6 Participaciones de la aportación
+       7 Total participaciones
+       8 Tipo */
     const ordenHeaders=[
       'FECHA',
-      'APORTACIONES ANTERIORES',
       'Nº APORTACIÓN',
       'IMPORTE APORTACIÓN',
+      'APORTACIONES ANTERIORES',
       'TOTAL APORTADO',
       'PARTICIPACIONES APORTACIÓN',
       'TOTAL PARTICIPACIONES',
       'TIPO'
     ];
 
-    /* Reconstruimos el encabezado y el cuerpo desde cero. Esto elimina
-       cualquier dependencia del orden que genere app.js. */
     let thead=table.querySelector('thead');
     let tbody=table.querySelector('tbody');
     if(!thead){
@@ -106,7 +106,11 @@
     }
     thead.innerHTML='';
     const htr=document.createElement('tr');
-    ordenHeaders.forEach(h=>{const th=document.createElement('th');th.textContent=h;htr.appendChild(th);});
+    ordenHeaders.forEach(h=>{
+      const th=document.createElement('th');
+      th.textContent=h;
+      htr.appendChild(th);
+    });
     thead.appendChild(htr);
 
     if(!tbody){
@@ -117,25 +121,27 @@
 
     data.forEach(r=>{
       const fecha=fechaES(r[idx.fecha]);
-      const anteriores=r[idx.anteriores]||'';
       const numero=r[idx.numero]||'';
       const importe=r[idx.importe]||'';
+      const anteriores=r[idx.anteriores]||'';
       const total=r[idx.total]||'';
       const partAport=r[idx.part]||'';
       const n=num(numero);
       const totalPart=n!=null&&acumulado[n]!=null?fmt3(acumulado[n]):'';
       const tipo=r[idx.tipo]||'';
-      const vals=[fecha,anteriores,numero,importe,total,partAport,totalPart,tipo];
+      const vals=[fecha,numero,importe,anteriores,total,partAport,totalPart,tipo];
       const tr=document.createElement('tr');
-      vals.forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.appendChild(td);});
+      vals.forEach(v=>{
+        const td=document.createElement('td');
+        td.textContent=v;
+        tr.appendChild(td);
+      });
       tbody.appendChild(tr);
     });
   }
 
   function aplicar(){
     normalizarFechas();
-    /* Solo reconstruimos tablas que realmente sean la tabla de operaciones de
-       un plan; las demás tablas de Patrimonio no se alteran. */
     document.querySelectorAll('table').forEach(corregirTabla);
   }
 
