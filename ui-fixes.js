@@ -1,75 +1,72 @@
-/* Operaciones de planes de pensiones: reconstrucción desde S.o.
-   Orden definitivo:
-   FECHA | Nº APORTACIÓN | APORTACIONES ANTERIORES | IMPORTE APORTACIÓN |
-   TOTAL APORTADO | PARTICIPACIONES APORTACIÓN | TOTAL PARTICIPACIONES | TIPO
-*/
+/* Corrección definitiva de Operaciones para planes de pensiones. */
 (function(){
-  'use strict';
-  const norm=s=>String(s??'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-  const isContribution=t=>['aportacion','aportación'].includes(norm(t));
-  const parseNum=v=>{const n=Number(v);return Number.isFinite(n)?n:0};
-  const fmt3=n=>new Intl.NumberFormat('es-ES',{minimumFractionDigits:3,maximumFractionDigits:3}).format(parseNum(n));
-  const fmtMoney=n=>new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(parseNum(n));
-  const fmtDate=v=>{const s=String(v??'').slice(0,10),m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);return m?`${m[3].padStart(2,'0')}/${m[2].padStart(2,'0')}/${m[1]}`:s};
-
-  function operationsTable(){
-    const cards=[...document.querySelectorAll('.card')];
-    const card=cards.find(c=>norm(c.querySelector('h3')?.textContent)==='operaciones');
-    return card?.querySelector('table.history')||null;
-  }
-
-  function rebuild(){
-    const table=operationsTable();
-    if(!table||!window.S||!Array.isArray(S.o)||!S.context)return;
-    const ops=S.o.filter(x=>x.producto_id===S.context).slice().sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha))||String(a.id).localeCompare(String(b.id)));
-    if(!ops.length)return;
-
-    let numero=0, totalAportado=0, totalParticipaciones=0;
-    const rows=ops.map(o=>{
-      const t=o.tipo_operacion||'';
-      const aport=isContribution(t);
-      const cantidad=parseNum(o.cantidad);
-      let importe=parseNum(o.importe_neto);
-      if(aport && !importe) importe=Math.abs(cantidad*parseNum(o.precio_unitario));
-      const anteriores=totalAportado;
-      if(aport){numero++;totalAportado+=importe;totalParticipaciones+=cantidad;}
-      return {
-        fecha:fmtDate(o.fecha),
-        numero:aport?numero:'',
-        anteriores,
-        importe:aport?importe:0,
-        total:totalAportado,
-        participacion:aport?cantidad:0,
-        totalParticipaciones,
-        tipo:t
-      };
-    }).reverse();
-
-    table.innerHTML='';
-    const thead=document.createElement('thead');
-    const trh=document.createElement('tr');
-    ['FECHA','Nº APORTACIÓN','APORTACIONES ANTERIORES','IMPORTE APORTACIÓN','TOTAL APORTADO','PARTICIPACIONES APORTACIÓN','TOTAL PARTICIPACIONES','TIPO'].forEach(x=>{const th=document.createElement('th');th.textContent=x;trh.appendChild(th)});
-    thead.appendChild(trh);table.appendChild(thead);
-    const tbody=document.createElement('tbody');
-    rows.forEach(r=>{
-      const tr=document.createElement('tr');
-      [r.fecha,r.numero,r.anteriores?fmtMoney(r.anteriores):fmtMoney(0),r.importe?fmtMoney(r.importe):'—',r.total?fmtMoney(r.total):fmtMoney(0),r.participacion?fmt3(r.participacion):'—',r.totalParticipaciones?fmt3(r.totalParticipaciones):'—',r.tipo].forEach((x,i)=>{const td=document.createElement('td');td.textContent=x;td.style.textAlign=i===0?'left':'right';tr.appendChild(td)});
-      tbody.appendChild(tr);
-    });
-    table.appendChild(tbody);
-    table.style.minWidth='1200px';
-  }
-
-  function formatDates(){
-    const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT),a=[];
-    while(w.nextNode())a.push(w.currentNode);
-    const rx=/\b(?:\d{4}[-\/]\d{1,2}[-\/]\d{1,2}|\d{1,2}[-\/]\d{1,2}[-\/]\d{4})\b/g;
-    a.forEach(n=>{const p=n.parentElement;if(!p||['SCRIPT','STYLE','INPUT','TEXTAREA','OPTION'].includes(p.tagName))return;n.nodeValue=n.nodeValue.replace(rx,x=>fmtDate(x));});
-  }
-
-  function apply(){formatDates();rebuild();}
-  let timer;
-  const observer=new MutationObserver(()=>{clearTimeout(timer);timer=setTimeout(apply,120);});
-  observer.observe(document.body,{childList:true,subtree:true,characterData:true});
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply);else apply();
+'use strict';
+const norm=s=>String(s??'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const n=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
+const money=v=>new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(n(v));
+const qtyfmt=v=>new Intl.NumberFormat('es-ES',{minimumFractionDigits:3,maximumFractionDigits:3}).format(n(v));
+function datefmt(v){
+ const s=String(v??'').slice(0,10);
+ let m=s.match(/^(\d{4})[-\/]([0-9]{1,2})[-\/]([0-9]{1,2})$/);
+ if(m)return `${m[3].padStart(2,'0')}/${m[2].padStart(2,'0')}/${m[1]}`;
+ m=s.match(/^([0-9]{1,2})[-\/]([0-9]{1,2})[-\/](\d{4})$/);
+ if(m)return `${m[1].padStart(2,'0')}/${m[2].padStart(2,'0')}/${m[3]}`;
+ return s;
+}
+function isAportacion(t){return ['aportacion','aportación'].includes(norm(t));}
+function findOperationsTable(){
+ const tables=[...document.querySelectorAll('table')];
+ return tables.find(t=>{
+   const h=[...t.querySelectorAll('thead th')].map(x=>norm(x.textContent));
+   return h.includes('fecha') && (h.includes('tipo') || h.includes('tipo operacion')) &&
+          (h.includes('aportaciones anteriores') || h.includes('nº aportaciones'));
+ })||null;
+}
+function getOps(){
+ if(!window.S||!Array.isArray(S.o))return [];
+ let ops=S.o.slice();
+ if(S.context)ops=ops.filter(x=>x.producto_id===S.context);
+ return ops.filter(x=>x.fecha).sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha))||String(a.id??'').localeCompare(String(b.id??'')));
+}
+function rebuild(){
+ const table=findOperationsTable();
+ const ops=getOps();
+ if(!table||!ops.length)return false;
+ let numero=0,totalAportado=0,totalParticipaciones=0;
+ const rows=ops.map(o=>{
+   const tipo=o.tipo_operacion||'';
+   const aport=isAportacion(tipo);
+   const participaciones=n(o.cantidad);
+   let importe=n(o.importe_neto);
+   if(aport && importe===0)importe=Math.abs(participaciones*n(o.precio_unitario));
+   const anteriores=totalAportado;
+   if(aport){numero++;totalAportado+=importe;totalParticipaciones+=participaciones;}
+   return {fecha:datefmt(o.fecha),numero:aport?numero:'',anteriores,importe:aport?importe:0,total:totalAportado,part:aport?participaciones:0,totalPart:totalParticipaciones,tipo};
+ }).reverse();
+ table.innerHTML='';
+ const thead=document.createElement('thead'),hr=document.createElement('tr');
+ ['FECHA','Nº APORTACIÓN','APORTACIONES ANTERIORES','IMPORTE APORTACIÓN','TOTAL APORTADO','PARTICIPACIONES APORTACIÓN','TOTAL PARTICIPACIONES','TIPO'].forEach(x=>{const th=document.createElement('th');th.textContent=x;hr.appendChild(th)});
+ thead.appendChild(hr);table.appendChild(thead);
+ const tbody=document.createElement('tbody');
+ rows.forEach(r=>{
+   const tr=document.createElement('tr');
+   const vals=[r.fecha,r.numero,money(r.anteriores),money(r.importe),money(r.total),r.part?qtyfmt(r.part):'—',r.totalPart?qtyfmt(r.totalPart):'—',r.tipo];
+   vals.forEach((v,i)=>{const td=document.createElement('td');td.textContent=v;td.style.textAlign=i===0?'left':'right';tr.appendChild(td)});
+   tbody.appendChild(tr);
+ });
+ table.appendChild(tbody);
+ table.style.width='100%';table.style.minWidth='1250px';table.style.tableLayout='auto';
+ return true;
+}
+function fixDates(){
+ const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT),nodes=[];
+ while(w.nextNode())nodes.push(w.currentNode);
+ const rx=/\b(?:\d{4}[-\/]\d{1,2}[-\/]\d{1,2}|\d{1,2}[-\/]\d{1,2}[-\/]\d{4})\b/g;
+ nodes.forEach(x=>{const p=x.parentElement;if(!p||['SCRIPT','STYLE','INPUT','TEXTAREA','OPTION'].includes(p.tagName))return;x.nodeValue=x.nodeValue.replace(rx,datefmt);});
+}
+let running=false,timer;
+const apply=()=>{if(running)return;running=true;try{rebuild();fixDates();}finally{running=false;}};
+const observer=new MutationObserver(()=>{clearTimeout(timer);timer=setTimeout(apply,150);});
+function start(){observer.observe(document.body,{childList:true,subtree:true,characterData:true});apply();setTimeout(apply,500);setTimeout(apply,1500);}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
