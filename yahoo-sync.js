@@ -12,3 +12,23 @@ async function importYahooHistory(){const pid=$('impP').value,p=S.p.find(x=>x.id
  const originalProduct=window.product;window.product=async function(id){await originalProduct(id);const box=document.getElementById('productChart');if(box){box.innerHTML=drawChart(id);return}const card=document.createElement('div');card.id='productChart';card.className='card';card.innerHTML=drawChart(id);const mb=document.getElementById('modalBox');if(mb){const first=mb.querySelector('.card');if(first)first.insertAdjacentElement('afterend',card);else mb.appendChild(card)}};
  const oldClose=window.closeM;window.closeM=function(){chartRange='1y';return oldClose()};
 })();
+
+(function(){
+ const originalQuoteHistory=window.quoteHistory;
+ const contributionType=t=>t==='Aportacion'||t==='Aportación';
+ const qtyAt=(id,fecha)=>S.o.filter(x=>x.producto_id===id&&String(x.fecha).slice(0,10)<=String(fecha).slice(0,10)).sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha))).reduce((a,x)=>a+delta(x),0);
+ window.quoteHistory=function(id){
+  const qh=histQ(id),vh=histV(id),m=new Map();
+  qh.forEach(q=>{const k=String(q.fecha).slice(0,10),qtyD=Number(q.cantidad)||qtyAt(id,k),r={fecha:q.fecha,cot:q.cierre,total:q.valor_total!=null?Number(q.valor_total):qtyD?Number(q.cierre||0)*qtyD:null,origen:q.origen||'Cotización'};m.set(k,r)});
+  vh.forEach(v=>{const k=String(v.fecha).slice(0,10),r=m.get(k)||{fecha:v.fecha};if(v.valor_total!=null)r.total=Number(v.valor_total);if(r.cot==null&&v.precio_unitario!=null)r.cot=Number(v.precio_unitario);if(r.cot==null&&v.valor_total!=null){const qd=qtyAt(id,k);if(qd)r.cot=Number(v.valor_total)/qd}r.origen=r.origen?r.origen+' + '+(v.origen||'Valoración'):(v.origen||'Valoración');m.set(k,r)});
+  const rows=[...m.values()].sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))),page=25,start=S.historyPage*page,part=rows.slice(start,start+page);
+  if(!rows.length)return '<div class="empty">Sin histórico.</div>';
+  const body=part.map(r=>`<tr><td>${date(r.fecha)}</td><td>${r.cot==null?'—':num(r.cot)+' €'}</td><td>${r.total==null?'—':money(r.total)}</td><td>${esc(r.origen||'')}</td></tr>`).join('');
+  const prevDisabled=start===0?'disabled':'',nextDisabled=start+page>=rows.length?'disabled':'';
+  return `<div id="quoteHistoryBox"><table class="history"><thead><tr><th>Fecha</th><th>Cotización/valor</th><th>Total</th><th>Origen</th></tr></thead><tbody>${body}</tbody></table><div class="toolbar" style="margin-top:12px"><span class="sub">${start+1}-${Math.min(start+page,rows.length)} de ${rows.length}</span><span><button class="btn alt" ${prevDisabled} onclick="window.historyNav('${id}',-1)">Anterior</button> <button class="btn alt" ${nextDisabled} onclick="window.historyNav('${id}',1)">Siguiente</button></span></div></div>`;
+ };
+ window.historyNav=function(id,step){const qh=histQ(id),vh=histV(id),dates=new Set([...qh,...vh].map(x=>String(x.fecha).slice(0,10)));const pages=Math.max(1,Math.ceil(dates.size/25));S.historyPage=Math.max(0,Math.min(pages-1,S.historyPage+step));const box=document.getElementById('quoteHistoryBox');if(box)box.outerHTML=window.quoteHistory(id)};
+ const originalOpsHistory=window.opsHistory;
+ window.opsHistory=function(id){const p=S.p.find(x=>x.id===id);if(!p||!String(tn(p)).toLowerCase().includes('pension'))return originalOpsHistory(id);const a=S.o.filter(x=>x.producto_id===id).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));if(!a.length)return '<div class="empty">Sin operaciones.</div>';let prior=0,count=0;const asc=a.slice().reverse();const snapshots=new Map();for(const x of asc){const t=x.tipo_operacion||'';const isA=contributionType(t);const before=prior;if(isA){prior+=Number(x.importe_neto)||0;count++}snapshots.set(x.id,{before,after:prior,count,qty:Number(x.cantidad)||0,price:Number(x.precio_unitario)||0,isA})}return `<div class="tablewrap"><table class="history pension-ops"><thead><tr><th>Fecha</th><th>Tipo</th><th>Aportaciones anteriores</th><th>Aportación actual</th><th>Total aportado</th><th>Nº aportaciones</th><th>Participaciones</th><th>Valor aportación</th></tr></thead><tbody>${a.map(x=>{const s=snapshots.get(x.id),mov=s.isA?Number(x.importe_neto)||0:0;return `<tr><td>${date(x.fecha)}</td><td>${esc(x.tipo_operacion)}</td><td>${money(s.before)}</td><td>${s.isA?money(mov):'—'}</td><td>${money(s.after)}</td><td>${s.count}</td><td>${num(s.qty)}</td><td>${s.price?num(s.price)+' €':'—'}</td></tr>`}).join('')}</tbody></table></div>`};
+ const style=document.createElement('style');style.textContent='.pension-ops{min-width:1150px}.pension-ops th,.pension-ops td{font-size:12px}.pension-ops td{vertical-align:middle}';document.head.appendChild(style);
+})();
