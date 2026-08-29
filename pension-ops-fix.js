@@ -1,6 +1,8 @@
-/* Corrección de la tabla Operaciones de planes de pensiones.
-   IMPORTANTE: app.js declara S con `const`, por lo que no existe como window.S.
-   Este script se ejecuta después de app.js y accede al binding global S directamente. */
+/* Corrección definitiva de la tabla Operaciones de planes de pensiones.
+   Estructura acordada:
+   FECHA | Nº APORTACIÓN | APORTACIONES ANTERIORES | IMPORTE APORTACIÓN |
+   TOTAL APORTADO | PARTICIPACIONES APORTACIÓN | TOTAL PARTICIPACIONES
+*/
 (function(){
 'use strict';
 
@@ -24,7 +26,7 @@ function getState(){
 function table(){
   return [...document.querySelectorAll('table')].find(t=>{
     const x=norm(t.innerText||'');
-    return x.includes('aportaciones anteriores') && x.includes('aportacion actual');
+    return x.includes('aportaciones anteriores') && (x.includes('aportacion actual') || x.includes('importe aportacion'));
   })||null;
 }
 
@@ -43,8 +45,8 @@ function rebuild(){
 
   let num=0,total=0,totalPart=0;
   const rows=a.map(o=>{
-    const tipo=o.tipo_operacion||'';
-    const isA=['aportacion','aportación'].includes(norm(tipo));
+    const tipo=norm(o.tipo_operacion||'');
+    const isA=tipo==='aportacion' || tipo==='aportación';
     const part=N(o.cantidad);
     let importe=N(o.importe_neto);
     if(isA && importe===0) importe=Math.abs(part*N(o.precio_unitario));
@@ -63,8 +65,7 @@ function rebuild(){
       isA?importe:0,
       total,
       isA?part:0,
-      totalPart,
-      tipo
+      totalPart
     ];
   }).reverse();
 
@@ -77,14 +78,14 @@ function rebuild(){
     'IMPORTE APORTACIÓN',
     'TOTAL APORTADO',
     'PARTICIPACIONES APORTACIÓN',
-    'TOTAL PARTICIPACIONES',
-    'TIPO'
+    'TOTAL PARTICIPACIONES'
   ].forEach(x=>{
     const th=document.createElement('th');
     th.textContent=x;
     trh.appendChild(th);
   });
-  h.appendChild(trh); t.appendChild(h);
+  h.appendChild(trh);
+  t.appendChild(h);
 
   const b=document.createElement('tbody');
   rows.forEach(r=>{
@@ -94,46 +95,49 @@ function rebuild(){
       if(i===2||i===3||i===4)td.textContent=money(v);
       else if(i===5||i===6)td.textContent=v?qtyFmt(v):'—';
       else td.textContent=v;
-      td.style.textAlign=(i===0||i===7)?'left':'right';
+      td.style.textAlign=i===0?'left':'right';
       tr.appendChild(td);
     });
     b.appendChild(tr);
   });
   t.appendChild(b);
 
-  // Resumen final: total de aportaciones acumuladas del plan.
+  // Resumen final: ambos acumulados del plan, siempre visibles.
   const f=document.createElement('tfoot');
   const fr=document.createElement('tr');
   const label=document.createElement('td');
   label.colSpan=4;
   label.textContent='TOTAL APORTACIONES ACUMULADAS';
   label.style.textAlign='left';
-  label.style.fontWeight='700';
+  label.style.fontWeight='800';
   const value=document.createElement('td');
   value.textContent=money(total);
   value.style.textAlign='right';
-  value.style.fontWeight='700';
-  fr.appendChild(label);
-  fr.appendChild(value);
-  const spacer=document.createElement('td');
-  spacer.colSpan=3;
-  fr.appendChild(spacer);
+  value.style.fontWeight='800';
+  const partLabel=document.createElement('td');
+  partLabel.textContent='TOTAL PARTICIPACIONES';
+  partLabel.style.textAlign='right';
+  partLabel.style.fontWeight='800';
+  const partValue=document.createElement('td');
+  partValue.textContent=qtyFmt(totalPart);
+  partValue.style.textAlign='right';
+  partValue.style.fontWeight='800';
+  fr.append(label,value,partLabel,partValue);
   f.appendChild(fr);
   t.appendChild(f);
 
+  // Las 7 columnas deben caber en la pantalla; no ocultar la última mediante un min-width artificial.
   t.style.width='100%';
-  t.style.minWidth='1250px';
-  t.style.tableLayout='auto';
-  t.dataset.pensionOpsFix='v5';
+  t.style.minWidth='0';
+  t.style.tableLayout='fixed';
+  t.dataset.pensionOpsFix='v6';
   return true;
 }
 
 function fixDates(){
   document.querySelectorAll('table td,table th').forEach(c=>{
     const s=c.textContent.trim();
-    if(/^\d{1,2}[\/-]\d{1,2}[\/-]\d{4}$/.test(s)||/^\d{4}[\/-]\d{1,2}[\/-]\d{1,2}$/.test(s)){
-      c.textContent=dateFmt(s);
-    }
+    if(/^\d{1,2}[\/-]\d{1,2}[\/-]\d{4}$/.test(s)||/^\d{4}[\/-]\d{1,2}[\/-]\d{1,2}$/.test(s))c.textContent=dateFmt(s);
   });
 }
 
