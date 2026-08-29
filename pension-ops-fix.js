@@ -100,10 +100,31 @@ function rebuild(){
     b.appendChild(tr);
   });
   t.appendChild(b);
+
+  // Resumen final: total de aportaciones acumuladas del plan.
+  const f=document.createElement('tfoot');
+  const fr=document.createElement('tr');
+  const label=document.createElement('td');
+  label.colSpan=4;
+  label.textContent='TOTAL APORTACIONES ACUMULADAS';
+  label.style.textAlign='left';
+  label.style.fontWeight='700';
+  const value=document.createElement('td');
+  value.textContent=money(total);
+  value.style.textAlign='right';
+  value.style.fontWeight='700';
+  fr.appendChild(label);
+  fr.appendChild(value);
+  const spacer=document.createElement('td');
+  spacer.colSpan=3;
+  fr.appendChild(spacer);
+  f.appendChild(fr);
+  t.appendChild(f);
+
   t.style.width='100%';
   t.style.minWidth='1250px';
   t.style.tableLayout='auto';
-  t.dataset.pensionOpsFix='v4';
+  t.dataset.pensionOpsFix='v5';
   return true;
 }
 
