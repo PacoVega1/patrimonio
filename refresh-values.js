@@ -30,7 +30,8 @@
   async function updateValues(){
     const btn = document.getElementById('refreshValuesBtn');
     if (!btn) return;
-    const products = (S.p || []).filter(p => p.activo !== false && p.ticker && !account(p));
+    const products = (S.p || []).filter(p => p.activo !== false && p.ticker && !account(p) && !String(tn(p) || '').toLowerCase().includes('pensión') && !String(tn(p) || '').toLowerCase().includes('pension'));
+    const skippedPensions = (S.p || []).filter(p => p.activo !== false && p.ticker && /pensión|pension/i.test(String(tn(p) || ''))).map(p => p.nombre);
     if (!products.length) {
       alert('No hay productos activos con ticker configurado para actualizar automáticamente. Los saldos de cuentas y los productos sin ticker requieren actualización manual.');
       return;
@@ -38,7 +39,7 @@
     btn.disabled = true;
     const label = btn.textContent;
     btn.textContent = 'Actualizando…';
-    let updated = 0, unchanged = 0, failed = [];
+    let updated = 0, unchanged = 0, failed = [], latestAvailable = [];
     try {
       const end = new Date().toISOString().slice(0,10);
       for (const p of products) {
@@ -55,7 +56,7 @@
           if (existing.error) throw existing.error;
           const seen = new Set((existing.data||[]).map(x=>String(x.fecha).slice(0,10)));
           const fresh = [...new Map(rows.filter(x=>x.fecha && !seen.has(String(x.fecha).slice(0,10))).map(x=>[String(x.fecha).slice(0,10),x])).values()];
-          if (!fresh.length) { unchanged++; continue; }
+          if (!fresh.length) { unchanged++; const maxDate = rows.reduce((m,x)=>x.fecha && x.fecha>m?x.fecha:m,''); if(maxDate) latestAvailable.push(p.nombre+': '+maxDate); continue; }
           const payload = fresh.map(x=>({user_id:S.user.id,producto_id:p.id,fecha:x.fecha,apertura:x.apertura,maximo:x.maximo,minimo:x.minimo,cierre:x.cierre,volumen:x.volumen,moneda:p.moneda||'EUR',tipo_precio:'cierre',factor_conversion:1,origen:'Yahoo Finance',fuente:'Yahoo Finance API',es_valida:true,prioridad_origen:60}));
           for(let i=0;i<payload.length;i+=500){
             const ins=await db.from('cotizaciones_historicas').insert(payload.slice(i,i+500));
@@ -68,7 +69,7 @@
       await load();
       let message = 'Actualización terminada.\nCotizaciones nuevas añadidas: '+updated+'.\nProductos sin cambios nuevos: '+unchanged+'.';
       if (failed.length) message += '\n\nNo se pudieron actualizar:\n'+failed.join('\n');
-      message += '\n\nSolo se actualizan productos con ticker configurado y compatibles con Yahoo Finance. Los saldos manuales y los productos sin ticker no se modifican.';
+      message += '\n\nSolo se actualizan productos con ticker compatible con Yahoo Finance. Los saldos manuales y los productos sin ticker no se modifican.';
       alert(message);
     } finally {
       const current = document.getElementById('refreshValuesBtn');
