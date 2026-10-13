@@ -68,6 +68,8 @@
       }
       await load();
       let message = 'Actualización terminada.\nCotizaciones nuevas añadidas: '+updated+'.\nProductos sin cambios nuevos: '+unchanged+'.';
+      if (latestAvailable.length) message += '\n\nÚltima fecha que devuelve Yahoo para productos sin novedades:\n'+latestAvailable.join('\n');
+      if (skippedPensions.length) message += '\n\nPlanes de pensiones no consultados en Yahoo (N1820/N5087 no son tickers de Yahoo):\n'+skippedPensions.join(', ')+'. Para ellos necesitamos una fuente específica de valores liquidativos.';
       if (failed.length) message += '\n\nNo se pudieron actualizar:\n'+failed.join('\n');
       message += '\n\nSolo se actualizan productos con ticker compatible con Yahoo Finance. Los saldos manuales y los productos sin ticker no se modifican.';
       alert(message);
