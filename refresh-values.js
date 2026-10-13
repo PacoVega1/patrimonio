@@ -30,55 +30,44 @@
   async function updateValues(){
     const btn = document.getElementById('refreshValuesBtn');
     if (!btn) return;
-    const products = (S.p || []).filter(p => p.activo !== false && p.ticker && !account(p) && !String(tn(p) || '').toLowerCase().includes('pensión') && !String(tn(p) || '').toLowerCase().includes('pension'));
-    const skippedPensions = (S.p || []).filter(p => p.activo !== false && p.ticker && /pensión|pension/i.test(String(tn(p) || ''))).map(p => p.nombre);
-    if (!products.length) {
-      alert('No hay productos activos con ticker configurado para actualizar automáticamente. Los saldos de cuentas y los productos sin ticker requieren actualización manual.');
-      return;
-    }
     btn.disabled = true;
     const label = btn.textContent;
     btn.textContent = 'Actualizando…';
-    let updated = 0, unchanged = 0, failed = [], latestAvailable = [];
     try {
-      const end = new Date().toISOString().slice(0,10);
-      for (const p of products) {
-        try {
-          const latest = await db.from('cotizaciones_historicas').select('fecha').eq('producto_id',p.id).order('fecha',{ascending:false}).limit(1);
-          if (latest.error) throw latest.error;
-          const lastDate = latest.data && latest.data[0] ? String(latest.data[0].fecha).slice(0,10) : '';
-          const startDate = lastDate ? new Date(new Date(lastDate+'T00:00:00').getTime()-7*86400000).toISOString().slice(0,10) : '2020-01-01';
-          const response = await db.functions.invoke('sync-yahoo-history',{body:{ticker:p.ticker,start:startDate,end}});
-          if (response.error) throw response.error;
-          const rows = response.data && response.data.rows || [];
-          if (!rows.length) { unchanged++; continue; }
-          const existing = await db.from('cotizaciones_historicas').select('fecha').eq('producto_id',p.id).gte('fecha',startDate).lte('fecha',end);
-          if (existing.error) throw existing.error;
-          const seen = new Set((existing.data||[]).map(x=>String(x.fecha).slice(0,10)));
-          const fresh = [...new Map(rows.filter(x=>x.fecha && !seen.has(String(x.fecha).slice(0,10))).map(x=>[String(x.fecha).slice(0,10),x])).values()];
-          if (!fresh.length) { unchanged++; const maxDate = rows.reduce((m,x)=>x.fecha && x.fecha>m?x.fecha:m,''); if(maxDate) latestAvailable.push(p.nombre+': '+maxDate); continue; }
-          const payload = fresh.map(x=>({user_id:S.user.id,producto_id:p.id,fecha:x.fecha,apertura:x.apertura,maximo:x.maximo,minimo:x.minimo,cierre:x.cierre,volumen:x.volumen,moneda:p.moneda||'EUR',tipo_precio:'cierre',factor_conversion:1,origen:'Yahoo Finance',fuente:'Yahoo Finance API',es_valida:true,prioridad_origen:60}));
-          for(let i=0;i<payload.length;i+=500){
-            const ins=await db.from('cotizaciones_historicas').insert(payload.slice(i,i+500));
-            if(ins.error) throw ins.error;
-          }
-          if (S.qLoaded) S.qLoaded[p.id]=false;
-          updated += fresh.length;
-        } catch(e) { failed.push(p.nombre+': '+(e.message||String(e))); }
+      const response = await db.functions.invoke('actualizar-cotizaciones', { body: {} });
+      if (response.error) {
+        let detail = response.error.message || String(response.error);
+        if (response.error.context && typeof response.error.context.json === 'function') {
+          try { const j = await response.error.context.json(); detail = j.error || detail; } catch (_) {}
+        }
+        throw new Error(detail);
       }
+      const data = response.data || {};
+      if (!data.ok && data.error) throw new Error(data.error);
       await load();
-      let message = 'Actualización terminada.\nCotizaciones nuevas añadidas: '+updated+'.\nProductos sin cambios nuevos: '+unchanged+'.';
-      if (latestAvailable.length) message += '\n\nÚltima fecha que devuelve Yahoo para productos sin novedades:\n'+latestAvailable.join('\n');
-      if (skippedPensions.length) message += '\n\nPlanes de pensiones no consultados en Yahoo (N1820/N5087 no son tickers de Yahoo):\n'+skippedPensions.join(', ')+'. Para ellos necesitamos una fuente específica de valores liquidativos.';
-      if (failed.length) message += '\n\nNo se pudieron actualizar:\n'+failed.join('\n');
-      message += '\n\nSolo se actualizan productos con ticker compatible con Yahoo Finance. Los saldos manuales y los productos sin ticker no se modifican.';
+      const resumen = data.resumen || {};
+      const details = data.detalles || [];
+      let message = 'Actualización terminada.\nProductos actualizados: ' + (resumen.actualizados || 0) +
+        '.\nDiscrepancias (no sobrescritas): ' + (resumen.discrepancias || 0) +
+        '.\nSin fuente configurada: ' + (resumen.sin_fuente || 0) +
+        '.\nErrores de fuente: ' + (resumen.errores || 0) + '.';
+      const updated = details.filter(x => x.estado === 'actualizado');
+      const failed = details.filter(x => x.estado === 'error');
+      const discrepancies = details.filter(x => x.estado === 'discrepancia');
+      const noSource = details.filter(x => x.estado === 'sin_fuente');
+      if (updated.length) message += '\n\nActualizados:\n' + updated.map(x => x.producto + ': ' + x.fecha + ' — ' + x.valor + ' ' + (x.fuente ? '(' + x.fuente + ')' : '')).join('\n');
+      if (failed.length) message += '\n\nErrores:\n' + failed.map(x => x.producto + ': ' + (x.error || 'error de fuente')).join('\n');
+      if (discrepancies.length) message += '\n\nDiscrepancias detectadas; se conservaron los datos existentes:\n' + discrepancies.map(x => x.producto + ': fecha ' + x.fecha).join('\n');
+      if (noSource.length) message += '\n\nSin fuente activa:\n' + noSource.map(x => x.producto).join(', ');
+      message += '\n\nLas cuentas y saldos manuales no se modifican.';
       alert(message);
+    } catch(e) {
+      alert('No se pudo completar la actualización automática.\n' + (e.message || String(e)));
     } finally {
       const current = document.getElementById('refreshValuesBtn');
-      if (current) { current.disabled=false; current.textContent=label; }
+      if (current) { current.disabled = false; current.textContent = label; }
     }
   }
-
   // El primer render puede haberse ejecutado antes de cargar este archivo.
   installButton();
 })();
