@@ -102,7 +102,7 @@ async function bankinterLatest(isin: string) {
   };
   const regex = /(\d{1,2})\s+(January|February|March|April|May|June|July|August|September|October|November|December|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\s+(\d{4})[\s\S]{0,100}?([0-9]+(?:[.,][0-9]+)*)\s*€/gi;
   const matches = [...text.matchAll(regex)];
-  if (!matches.length) throw new Error("Bankinter no devuelve fechas y valores reconocibles en el histórico de " + fund.name);
+  if (!matches.length) throw new Error("Respuesta Bankinter sin histórico parseable para " + fund.name + "; contenido recibido: " + text.slice(0, 240));
   const candidates = matches.map(m => {
     const day = String(m[1]).padStart(2, "0");
     const month = monthNumbers[m[2].toLowerCase()];
