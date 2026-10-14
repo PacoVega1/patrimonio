@@ -268,19 +268,37 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (!auto) {
-        const { data: component } = await supabase
-          .from("cartera_componentes")
-          .select("cantidad")
+        // Obtener las participaciones netas a partir de las operaciones registradas.
+        // Si no hay operaciones, usar las cantidades de carteras; nunca enviar NULL
+        // a valor_total, que es obligatorio en la base de datos.
+        const { data: ops } = await supabase
+          .from("operaciones")
+          .select("tipo_operacion,cantidad")
           .eq("producto_id", p.id)
-          .eq("activo", true);
-        const quantity = (component || []).reduce((s: number, x: any) => s + Number(x.cantidad || 0), 0);
+          .eq("user_id", userId);
+        let quantity = (ops || []).reduce((s: number, x: any) => {
+          const tipo = String(x.tipo_operacion || "").toLowerCase();
+          const qty = Number(x.cantidad || 0);
+          if (tipo.includes("compra") || tipo.includes("aport") || tipo.includes("suscrip")) return s + qty;
+          if (tipo.includes("venta") || tipo.includes("reemb") || tipo.includes("retir")) return s - qty;
+          return s;
+        }, 0);
+        if (!ops?.length) {
+          const { data: component } = await supabase
+            .from("cartera_componentes")
+            .select("cantidad")
+            .eq("producto_id", p.id)
+            .eq("activo", true);
+          quantity = (component || []).reduce((s: number, x: any) => s + Number(x.cantidad || 0), 0);
+        }
+        quantity = Math.max(0, quantity);
         const { error: insV } = await supabase.from("valoraciones_historicas").insert({
           user_id: userId,
           producto_id: p.id,
           fecha: date,
-          cantidad: quantity || null,
+          cantidad: quantity,
           precio_unitario: price,
-          valor_total: quantity ? price * quantity : null,
+          valor_total: price * quantity,
           moneda: got.moneda || p.moneda || "EUR",
           origen: "automatico",
           fuente: source.nombre,
