@@ -39,6 +39,21 @@ async function yahooLatest(ticker: string) {
   throw new Error("Yahoo no devuelve un cierre válido");
 }
 
+async function yahooHistory(ticker: string) {
+  const period1 = Math.floor(new Date("2020-01-01T00:00:00Z").getTime() / 1000);
+  const period2 = Math.floor(Date.now() / 1000);
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?period1=${period1}&period2=${period2}&interval=1d&events=history`;
+  const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
+  if (!r.ok) throw new Error(`Yahoo histórico HTTP ${r.status}`);
+  const j = await r.json();
+  const q = j?.chart?.result?.[0];
+  if (!q?.timestamp?.length) throw new Error("Yahoo no devuelve histórico");
+  return q.timestamp.map((ts: number, i: number) => ({
+    fecha: isoDate(ts), cierre: toNumber(q.indicators?.quote?.[0]?.close?.[i]),
+    moneda: q.meta?.currency || "EUR"
+  })).filter((x: any) => x.cierre !== null && x.cierre > 0);
+}
+
 function investingUrl(productName: string) {
   const n = productName.toUpperCase();
   if (n.includes("DESTINO 2030")) return "https://es.investing.com/funds/cabk-destino-2030-pp-historical-data";
@@ -115,6 +130,37 @@ async function bankinterLatest(isin: string) {
   candidates.sort((a, b) => b.fecha.localeCompare(a.fecha));
   return { fecha: candidates[0].fecha, cierre: candidates[0].cierre, moneda: "EUR" };
 }
+async function bankinterHistory(isin: string) {
+  const funds: Record<string, { url: string; name: string }> = {
+    "ES0133565004": { url: "https://bancaonline.bankinter.com/fondos/valores-liquidativos.xhtml?cod=0469&div=001&faces-redirect=true&fromView=buscadorFondos&nombreFondo=Bankinter+Fondo+Inteligente+Rf", name: "Bankinter Fondo Inteligente RF" },
+    "ES0133565012": { url: "https://bancaonline.bankinter.com/fondos/valores-liquidativos.xhtml?cod=0470&div=001&faces-redirect=true&fromView=buscadorFondos&nombreFondo=Bankinter+Fondo+Inteligente+Rv", name: "Bankinter Fondo Inteligente RV" }
+  };
+  const fund = funds[isin];
+  if (!fund) throw new Error("ISIN no configurado para Bankinter");
+  const r = await fetch(fund.url, { headers: { "User-Agent": "Mozilla/5.0", "Accept-Language": "es-ES,es;q=0.9,en;q=0.8" } });
+  if (!r.ok) throw new Error("Bankinter histórico HTTP " + r.status);
+  const html = await r.text();
+  const text = html.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;|&#160;/gi, " ").replace(/&euro;|&#8364;/gi, "€").replace(/&amp;/gi, "&").replace(/\s+/g, " ").trim();
+  const monthNumbers: Record<string, string> = {
+    january: "01", february: "02", march: "03", april: "04", may: "05", june: "06",
+    july: "07", august: "08", september: "09", october: "10", november: "11", december: "12",
+    enero: "01", febrero: "02", marzo: "03", abril: "04", mayo: "05", junio: "06",
+    julio: "07", agosto: "08", septiembre: "09", octubre: "10", noviembre: "11", diciembre: "12"
+  };
+  const regex = /(\d{1,2})\s+(January|February|March|April|May|June|July|August|September|October|November|December|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\s+(\d{4})[\s\S]{0,100}?([0-9]+(?:[.,][0-9]+)*)\s*€/gi;
+  const rows = [...text.matchAll(regex)].map(m => {
+    const day = String(m[1]).padStart(2, "0");
+    const month = monthNumbers[m[2].toLowerCase()];
+    const raw = m[4];
+    const cierre = Number(raw.includes(",") ? raw.replace(/\./g, "").replace(",", ".") : raw);
+    return { fecha: m[3] + "-" + month + "-" + day, cierre, moneda: "EUR" };
+  }).filter(x => /^\d{4}-\d{2}-\d{2}$/.test(x.fecha) && Number.isFinite(x.cierre) && x.cierre > 0);
+  if (!rows.length) throw new Error("Bankinter no devuelve histórico para " + fund.name);
+  const unique = new Map<string, {fecha:string;cierre:number;moneda:string}>();
+  for (const row of rows) unique.set(row.fecha, row);
+  return [...unique.values()].sort((a,b) => a.fecha.localeCompare(b.fecha));
+}
+
 async function caixabankPensionLatest(productName: string) {
   const n = productName.toUpperCase();
   const id = n.includes("OPORTUNIDAD") ? "106" : n.includes("DESTINO 2030") ? "46" : "";
@@ -211,6 +257,56 @@ Deno.serve(async (req) => {
     const sourceId = usedLink.fuente_id;
     const date = got.fecha;
     const price = got.cierre;
+
+    const selectedSourceName = String(source.nombre || "").toLowerCase();
+    if (selectedSourceName.includes("yahoo") || selectedSourceName.includes("newton")) {
+      try {
+        if (p.ticker) {
+          const history = await yahooHistory(p.ticker);
+          const { data: existingDates } = await supabase.from("cotizaciones_historicas").select("fecha").eq("producto_id", p.id);
+          const known = new Set((existingDates || []).map((x: any) => String(x.fecha)));
+          const missing = history.filter((x: any) => !known.has(x.fecha)).map((x: any) => ({
+            producto_id: p.id, fecha: x.fecha, cierre: x.cierre, moneda: x.moneda || p.moneda || "EUR",
+            fuente_id: sourceId, tipo_precio: "cierre",
+            observaciones: `Carga histórica automática mediante ${source.nombre}; fechas desde 2020.`
+          }));
+          for (let i = 0; i < missing.length; i += 250) {
+            const { error: historyError } = await supabase.from("cotizaciones_historicas").insert(missing.slice(i, i + 250));
+            if (historyError) throw new Error(historyError.message);
+          }
+        }
+      } catch (e) { console.error("Histórico Yahoo incompleto para", p.nombre, e); }
+    } else if (selectedSourceName.includes("bankinter")) {
+      try {
+        const history = await bankinterHistory(p.isin || "");
+        const { data: existingVals } = await supabase.from("valoraciones_historicas").select("fecha,origen").eq("producto_id", p.id);
+        const knownAuto = new Set((existingVals || []).filter((x: any) => x.origen === "automatico").map((x: any) => String(x.fecha)));
+        const knownManual = new Set((existingVals || []).filter((x: any) => x.origen === "manual").map((x: any) => String(x.fecha)));
+        const { data: ops } = await supabase.from("operaciones").select("tipo_operacion,cantidad").eq("producto_id", p.id).eq("user_id", userId);
+        let quantity = (ops || []).reduce((s: number, x: any) => {
+          const tipo = String(x.tipo_operacion || "").toLowerCase();
+          const qty = Number(x.cantidad || 0);
+          if (tipo.includes("compra") || tipo.includes("aport") || tipo.includes("suscrip")) return s + qty;
+          if (tipo.includes("venta") || tipo.includes("reemb") || tipo.includes("retir")) return s - qty;
+          return s;
+        }, 0);
+        if (!ops?.length) {
+          const { data: components } = await supabase.from("cartera_componentes").select("cantidad").eq("producto_id", p.id).eq("activo", true);
+          quantity = (components || []).reduce((s: number, x: any) => s + Number(x.cantidad || 0), 0);
+        }
+        quantity = Math.max(0, quantity);
+        const missingVals = history.filter((x: any) => !knownAuto.has(x.fecha) && !knownManual.has(x.fecha)).map((x: any) => ({
+          user_id: userId, producto_id: p.id, fecha: x.fecha, cantidad: quantity,
+          precio_unitario: x.cierre, valor_total: x.cierre * quantity, moneda: x.moneda || "EUR",
+          origen: "automatico", fuente: source.nombre,
+          observaciones: "Carga histórica automática desde 2020; no sobrescribe valoraciones manuales."
+        }));
+        for (let i = 0; i < missingVals.length; i += 250) {
+          const { error: historyError } = await supabase.from("valoraciones_historicas").insert(missingVals.slice(i, i + 250));
+          if (historyError) throw new Error(historyError.message);
+        }
+      } catch (e) { console.error("Histórico Bankinter incompleto para", p.nombre, e); }
+    }
 
     // Acciones/ETF y cualquier producto cuya fuente sea una cotización se
     // guardan en cotizaciones_historicas. No se modifica ningún registro.
