@@ -1,8 +1,8 @@
 /* Dashboard dinamico de Patrimonio: total + cuentas + inversiones + productos */
 (function(){
 const E=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
-const M=n=>{const s=new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR',useGrouping:false,maximumFractionDigits:2}).format(Number(n)||0);return s.replace(/^(-?\\d+)/,x=>x.replace(/\\B(?=(\\d{3})+(?!\\d))/g,'.'))};
-const N=n=>{const s=new Intl.NumberFormat('es-ES',{useGrouping:false,maximumFractionDigits:3}).format(Number(n)||0);const a=s.split(',');a[0]=a[0].replace(/\\B(?=(\\d{3})+(?!\\d))/g,'.');return a.join(',')};
+const M=n=>{const s=new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR',useGrouping:false,maximumFractionDigits:2}).format(Number(n)||0);return s.replace(/^(-?\d+)/,x=>x.replace(/\B(?=(\d{3})+(?!\d))/g,'.'))};
+const N=n=>{const s=new Intl.NumberFormat('es-ES',{useGrouping:false,maximumFractionDigits:3}).format(Number(n)||0);const a=s.split(',');a[0]=a[0].replace(/\B(?=(\d{3})+(?!\d))/g,'.');return a.join(',')};
 const D=d=>{if(!d)return'—';const x=new Date(String(d).slice(0,10)+'T00:00:00');return Number.isNaN(x.getTime())?'—':String(x.getDate()).padStart(2,'0')+'/'+String(x.getMonth()+1).padStart(2,'0')+'/'+x.getFullYear()};
 const state=window.PatrimonioDashboard=window.PatrimonioDashboard||{};state.view=state.view||'general';state.range=state.range||'all';state.selection=state.selection||{};
 const st=document.createElement('style');st.textContent=`
