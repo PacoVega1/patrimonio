@@ -4,7 +4,7 @@ const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const S={user:null,p:[],e:[],t:[],o:[],v:[],q:[],qLoaded:{},i:[],docs:[],sources:[],tab:'resumen',open:{},context:null,historyPage:0};
 const $=id=>document.getElementById(id);
 const money=n=>new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(Number(n)||0);
-const num=n=>{n=Number(n)||0;const a=Math.abs(n),d=a&&a<.001?8:a<.01?6:a<.1?5:3;return new Intl.NumberFormat('es-ES',{useGrouping:true,minimumFractionDigits:d,maximumFractionDigits:d}).format(n)};
+const num=n=>{n=Number(n)||0;const a=Math.abs(n),d=a&&a<.001?8:a<.01?6:a<.1?5:3;const s=new Intl.NumberFormat('es-ES',{useGrouping:false,minimumFractionDigits:d,maximumFractionDigits:d}).format(n);const parts=s.split(',');parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,'.');return parts.join(',')};
 const date=d=>d?new Intl.DateTimeFormat('es-ES').format(new Date(String(d).slice(0,10)+'T00:00:00')):'—';
 const today=()=>new Date().toISOString().slice(0,10);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
