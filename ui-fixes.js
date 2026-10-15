@@ -3,8 +3,8 @@
 'use strict';
 const norm=s=>String(s??'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 const n=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
-const money=v=>new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR',minimumFractionDigits:2,maximumFractionDigits:2}).format(n(v));
-const qtyfmt=v=>new Intl.NumberFormat('es-ES',{minimumFractionDigits:3,maximumFractionDigits:3}).format(n(v));
+const money=v=>{const s=new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR',useGrouping:false,minimumFractionDigits:2,maximumFractionDigits:2}).format(n(v));return s.replace(/^(-?\\d+)/,x=>x.replace(/\\B(?=(\\d{3})+(?!\\d))/g,'.'))};
+const qtyfmt=v=>{const s=new Intl.NumberFormat('es-ES',{useGrouping:false,minimumFractionDigits:3,maximumFractionDigits:3}).format(n(v));const a=s.split(',');a[0]=a[0].replace(/\\B(?=(\\d{3})+(?!\\d))/g,'.');return a.join(',')};
 function datefmt(v){
  const s=String(v??'').slice(0,10);
  let m=s.match(/^(\d{4})[-\/]([0-9]{1,2})[-\/]([0-9]{1,2})$/);
