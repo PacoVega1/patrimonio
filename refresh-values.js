@@ -7,9 +7,6 @@
 
   function installButton(){
     const top = document.querySelector('#app .top');
-    const tabs = document.querySelector('#app .tabs');
-    const capture = Array.from(document.querySelectorAll('#app button')).find(b => (b.textContent || '').includes('Captura inteligente'));
-    if (capture && tabs && capture.parentElement !== tabs) tabs.insertBefore(capture, tabs.firstChild);
     if (!top || document.getElementById('refreshValuesBtn')) return;
     const btn = document.createElement('button');
     btn.id = 'refreshValuesBtn';
