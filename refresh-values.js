@@ -7,23 +7,31 @@
 
   function installButton(){
     const top = document.querySelector('#app .top');
-    if (!top || document.getElementById('refreshValuesBtn')) return;
-    const btn = document.createElement('button');
-    btn.id = 'refreshValuesBtn';
-    btn.className = 'btn';
-    btn.textContent = '↻ Actualizar cotizaciones';
-    btn.title = 'Recupera cotizaciones recientes de los productos con ticker configurado';
-    btn.addEventListener('click', updateValues);
-    top.appendChild(btn);
+    if (!top) return;
+    let btn = document.getElementById('refreshValuesBtn');
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.id = 'refreshValuesBtn';
+      btn.className = 'btn';
+      btn.textContent = '↻ Actualizar cotizaciones';
+      btn.title = 'Recupera cotizaciones recientes de los productos con ticker configurado';
+      btn.addEventListener('click', updateValues);
+    }
+    const brand = top.querySelector('.brand');
     const capture = Array.from(top.querySelectorAll('button')).find(b => (b.textContent || '').includes('Captura inteligente'));
     const logout = Array.from(top.querySelectorAll('button')).find(b => (b.textContent || '').trim() === 'Salir');
-    if (capture) top.insertBefore(btn, capture);
-    if (logout && capture) top.insertBefore(capture, logout);
-    const style = document.createElement('style');
-    style.textContent = '@media(max-width:600px){#refreshValuesBtn{font-size:12px;padding:9px 10px}.top{flex-wrap:wrap}}';
-    document.head.appendChild(style);
+    // Orden solicitado: título a la izquierda, actualizar, captura en medio y salir a la derecha.
+    if (brand) top.appendChild(brand);
+    top.appendChild(btn);
+    if (capture) top.appendChild(capture);
+    if (logout) top.appendChild(logout);
+    if (!document.getElementById('refreshValuesResponsiveStyle')) {
+      const style = document.createElement('style');
+      style.id = 'refreshValuesResponsiveStyle';
+      style.textContent = '@media(max-width:600px){#refreshValuesBtn{font-size:12px;padding:9px 10px}.top{flex-wrap:wrap}}';
+      document.head.appendChild(style);
+    }
   }
-
   window.render = function(){
     originalRender.apply(this, arguments);
     installButton();
