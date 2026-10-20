@@ -14,8 +14,11 @@
     btn.textContent = '↻ Actualizar cotizaciones';
     btn.title = 'Recupera cotizaciones recientes de los productos con ticker configurado';
     btn.addEventListener('click', updateValues);
-    const logout = top.querySelector('button');
     top.appendChild(btn);
+    const capture = Array.from(top.querySelectorAll('button')).find(b => (b.textContent || '').includes('Captura inteligente'));
+    const logout = Array.from(top.querySelectorAll('button')).find(b => (b.textContent || '').trim() === 'Salir');
+    if (capture) top.insertBefore(btn, capture);
+    if (logout && capture) top.insertBefore(capture, logout);
     const style = document.createElement('style');
     style.textContent = '@media(max-width:600px){#refreshValuesBtn{font-size:12px;padding:9px 10px}.top{flex-wrap:wrap}}';
     document.head.appendChild(style);
