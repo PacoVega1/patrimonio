@@ -78,19 +78,8 @@ async function deleteProduct(id) {
   const p = S.p.find(x => x.id === id);
   if (!p) return;
   try {
-    if (!confirm('¿Comprobar si "' + p.nombre + '" tiene operaciones o históricos antes de eliminarlo?')) return;
-    const refs = [
-      ['operaciones', 'producto_id'], ['operaciones', 'producto_usuario_id'],
-      ['intereses_cuentas', 'producto_id'],
-      ['dividendos', 'producto_id'], ['dividendos', 'producto_usuario_id'],
-      ['valoraciones_historicas', 'producto_id'], ['valoraciones_historicas', 'producto_usuario_id'],
-      ['cotizaciones_historicas', 'producto_id'],
-      ['documentos_capturas', 'producto_id'],
-      ['cartera_componentes', 'producto_id'], ['cartera_componentes', 'producto_usuario_id'],
-      ['historicos_cargas', 'producto_id'], ['importaciones_posicion_detalle', 'producto_id'],
-      ['productos_fuentes', 'producto_id'], ['productos_identificadores', 'producto_id'],
-      ['rendimientos_financieros', 'producto_id']
-    ];
+    if (!confirm('¿Comprobar si el producto ' + p.nombre + ' tiene datos asociados antes de eliminarlo?')) return;
+    const refs = [['operaciones','producto_id'],['operaciones','producto_usuario_id'],['intereses_cuentas','producto_id'],['dividendos','producto_id'],['dividendos','producto_usuario_id'],['valoraciones_historicas','producto_id'],['valoraciones_historicas','producto_usuario_id'],['cotizaciones_historicas','producto_id'],['documentos_capturas','producto_id'],['cartera_componentes','producto_id'],['cartera_componentes','producto_usuario_id'],['historicos_cargas','producto_id'],['importaciones_posicion_detalle','producto_id'],['productos_fuentes','producto_id'],['productos_identificadores','producto_id'],['rendimientos_financieros','producto_id']];
     const found = [];
     for (const [table, col] of refs) {
       const q = await db.from(table).select('id', { count: 'exact', head: true }).eq(col, id);
@@ -98,24 +87,20 @@ async function deleteProduct(id) {
       if ((q.count || 0) > 0 && !found.includes(table)) found.push(table);
     }
     if (found.length) {
-      if (!confirm('Este producto tiene datos asociados (' + found.join(', ') + ').\n\nNo se borrará definitivamente. ¿Quieres marcarlo como INACTIVO y conservar sus datos?')) return;
+      if (!confirm('Este producto tiene datos asociados (' + found.join(', ') + '). No se borrará. ¿Quieres marcarlo como INACTIVO y conservar los datos?')) return;
       const r = await db.from('productos').update({ activo: false }).eq('id', id);
       if (r.error) throw r.error;
-      p.activo = false;
-      S.tab = 'entidades';
-      render();
+      p.activo = false; S.tab = 'entidades'; render();
       alert('Producto marcado como inactivo. Sus operaciones e históricos se conservan.');
       return;
     }
-    if (!confirm('No se encontraron datos asociados. ¿Borrar definitivamente "' + p.nombre + '"? Esta acción no se puede deshacer.')) return;
+    if (!confirm('No se encontraron datos asociados. ¿Borrar definitivamente ' + p.nombre + '? Esta acción no se puede deshacer.')) return;
     const r = await db.from('productos').delete().eq('id', id);
     if (r.error) throw r.error;
-    S.p = S.p.filter(x => x.id !== id);
-    S.tab = 'entidades';
-    render();
+    S.p = S.p.filter(x => x.id !== id); S.tab = 'entidades'; render();
     alert('Producto eliminado definitivamente.');
   } catch (e) {
-    alert('No se pudo completar la operación con seguridad: ' + (e.message || e) + '\n\nNo se ha borrado el producto.');
+    alert('No se pudo completar la operación con seguridad: ' + (e.message || e) + '. No se ha borrado el producto.');
   }
 }
 function newProduct(entityId){const entities=S.e.filter(e=>e.activo!==false);if(!entities.length){alert('Primero debes crear una entidad financiera.');return}modalBox.innerHTML='<h2>＋ Añadir a la entidad</h2><p class="sub">Primero puedes registrar la cuenta. Los productos de inversión se añaden después, cuando los necesites.</p><div class="form"><label class="full">¿Qué quieres añadir?<select id="npMode" onchange="refreshNewProductMode()"><option value="account">Crear una cuenta</option><option value="product">Añadir un producto de inversión</option></select></label><label class="full">Entidad financiera<select id="npEntity">'+entities.map(e=>'<option value="'+e.id+'" '+(e.id===entityId?'selected':'')+'>'+esc(e.nombre)+'</option>').join('')+'</select></label><div id="npDetails" class="full"></div><p id="npStatus" class="sub full"></p></div><br><button class="btn" id="npSave" onclick="saveNewProduct()">Crear cuenta</button> <button class="btn alt" onclick="closeM()">Cancelar</button>';refreshNewProductMode();modal.classList.add('open')}
