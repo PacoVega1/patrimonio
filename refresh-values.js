@@ -65,10 +65,17 @@
       const failed = details.filter(x => x.estado === 'error');
       const discrepancies = details.filter(x => x.estado === 'discrepancia');
       const noSource = details.filter(x => x.estado === 'sin_fuente');
-      if (updated.length) message += '\n\nActualizados:\n' + updated.map(x => x.producto + ': ' + x.fecha + ' — ' + x.valor + ' ' + (x.fuente ? '(' + x.fuente + ')' : '')).join('\n');
-      if (failed.length) message += '\n\nErrores:\n' + failed.map(x => x.producto + ': ' + (x.error || 'error de fuente')).join('\n');
-      if (discrepancies.length) message += '\n\nDiscrepancias detectadas; se conservaron los datos existentes:\n' + discrepancies.map(x => x.producto + ': fecha ' + x.fecha).join('\n');
-      if (noSource.length) message += '\n\nSin fuente activa:\n' + noSource.map(x => x.producto).join(', ');
+      const fmt = value => {
+        if (value === null || value === undefined || value === '') return 'no disponible';
+        const n = Number(value);
+        return Number.isFinite(n) ? n.toLocaleString('es-ES', {maximumFractionDigits: 8}) : String(value);
+      };
+      if (discrepancies.length) message += '\n\nDISCREPANCIAS (se conservaron los datos existentes):\n' +
+        discrepancies.map(x => x.producto + '\nFecha: ' + (x.fecha || 'no disponible') +
+          '\nValor guardado: ' + fmt(x.manual) + '\nValor de la fuente: ' + fmt(x.automatico)).join('\n\n');
+      if (failed.length) message += '\n\nERRORES DE FUENTE:\n' + failed.map(x => x.producto + ': ' + (x.error || 'error de fuente')).join('\n');
+      if (noSource.length) message += '\n\nSIN FUENTE ACTIVA:\n' + noSource.map(x => x.producto).join('\n');
+      if (updated.length) message += '\n\nACTUALIZADOS:\n' + updated.map(x => x.producto + ': ' + x.fecha + ' — ' + fmt(x.valor) + ' ' + (x.fuente ? '(' + x.fuente + ')' : '')).join('\n');
       message += '\n\nLas cuentas y saldos manuales no se modifican.';
       alert(message);
     } catch(e) {
