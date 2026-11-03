@@ -54,32 +54,50 @@ async function yahooHistory(ticker: string) {
   })).filter((x: any) => x.cierre !== null && x.cierre > 0);
 }
 
-function investingUrl(productName: string) {
+function investingUrl(productName: string, isin: string | null) {
   const n = productName.toUpperCase();
+  const fidelityFunds: Record<string, string> = {
+    "IE00BYX5M476": "https://es.investing.com/funds/ie00byx5m476-historical-data",
+    "IE00BYX5MD61": "https://es.investing.com/funds/ie00byx5md61-historical-data",
+    "IE00BYX5NX33": "https://es.investing.com/funds/ie00byx5nx33-historical-data"
+  };
+  if (isin && fidelityFunds[isin.toUpperCase()]) return fidelityFunds[isin.toUpperCase()];
   if (n.includes("DESTINO 2030")) return "https://es.investing.com/funds/cabk-destino-2030-pp-historical-data";
   if (n.includes("OPORTUNIDAD")) return "https://es.investing.com/funds/cabk-oportunidad-pp-historical-data";
   return null;
 }
 
-async function investingLatest(productName: string) {
-  const url = investingUrl(productName);
+async function investingLatest(productName: string, isin: string | null) {
+  const url = investingUrl(productName, isin);
   if (!url) throw new Error("No hay adaptador Investing configurado para este producto");
-  const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0", "Accept-Language": "es-ES,es;q=0.9,en;q=0.8" } });
+  const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36", "Accept-Language": "es-ES,es;q=0.9,en;q=0.8" } });
   if (!r.ok) throw new Error(`Investing HTTP ${r.status}`);
-  const text = await r.text();
-  // Investing cambia con frecuencia el HTML. Buscamos patrones de fecha/último
-  // sin asumir que el HTML concreto permanecerá estable.
-  const dateMatches = [...text.matchAll(/(\d{2})[-\/]([A-Za-z]{3}|\d{2})[-\/](\d{4})/g)];
-  const euroMatches = [...text.matchAll(/(?:Último|Last|Close)[^0-9]{0,80}([0-9]+[.,][0-9]+)/gi)];
-  if (!dateMatches.length || !euroMatches.length) throw new Error("Investing no ha permitido extraer el último valor del histórico");
-  const lastDate = dateMatches[dateMatches.length - 1];
-  const months: Record<string,string> = { ene:"01",feb:"02",mar:"03",abr:"04",may:"05",jun:"06",jul:"07",ago:"08",sep:"09",oct:"10",nov:"11",dic:"12" };
-  const m = months[(lastDate[2] || "").toLowerCase()] || lastDate[2];
-  const fecha = `${lastDate[3]}-${String(m).padStart(2,"0")}-${lastDate[1]}`;
-  const raw = euroMatches[euroMatches.length - 1][1].replace(/\./g, "").replace(",", ".");
-  const cierre = Number(raw);
-  if (!Number.isFinite(cierre)) throw new Error("Valor Investing no válido");
-  return { fecha, cierre, moneda: "EUR" };
+  const html = await r.text();
+  const text = html.replace(/<script[\\s\\S]*?<\\/script>/gi, " ").replace(/<style[\\s\\S]*?<\\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;|&#160;/gi, " ").replace(/&amp;/gi, "&").replace(/\\s+/g, " ");
+  const candidates: Array<{fecha:string;cierre:number}> = [];
+  const rowRegex = /(\\d{1,2})[.\\/-](\\d{1,2})[.\\/-](\\d{4})[\\s\\S]{0,180}?([0-9]+(?:[.,][0-9]+)*)/g;
+  for (const m of text.matchAll(rowRegex)) {
+    const day = String(m[1]).padStart(2, "0"), month = String(m[2]).padStart(2, "0");
+    const raw = m[4];
+    const cierre = Number(raw.includes(",") ? raw.replace(/\\./g, "").replace(",", ".") : raw);
+    if (Number.isFinite(cierre) && cierre > 0 && Number(month) >= 1 && Number(month) <= 12 && Number(day) >= 1 && Number(day) <= 31)
+      candidates.push({ fecha: `${m[3]}-${month}-${day}`, cierre });
+  }
+  if (!candidates.length) {
+    const dateMatches = [...html.matchAll(/(\\d{2})[-\\/]([A-Za-z]{3}|\\d{2})[-\\/](\\d{4})/g)];
+    const valueMatches = [...html.matchAll(/(?:Último|Last|Close)[^0-9]{0,100}([0-9]+[.,][0-9]+)/gi)];
+    if (dateMatches.length && valueMatches.length) {
+      const d = dateMatches[dateMatches.length - 1];
+      const monthNames: Record<string,string> = { ene:"01",feb:"02",mar:"03",abr:"04",may:"05",jun:"06",jul:"07",ago:"08",sep:"09",oct:"10",nov:"11",dic:"12" };
+      const month = monthNames[(d[2] || "").toLowerCase()] || d[2];
+      const raw = valueMatches[valueMatches.length - 1][1].replace(/\\./g, "").replace(",", ".");
+      candidates.push({ fecha: `${d[3]}-${String(month).padStart(2,"0")}-${d[1]}`, cierre: Number(raw) });
+    }
+  }
+  candidates.sort((a,b) => b.fecha.localeCompare(a.fecha));
+  const latest = candidates.find(x => Number.isFinite(x.cierre) && x.cierre > 0);
+  if (!latest) throw new Error("Investing no devolvió una fecha y un valor liquidativo reconocibles");
+  return { ...latest, moneda: "EUR" };
 }
 
 async function bankinterLatest(isin: string) {
@@ -234,7 +252,7 @@ Deno.serve(async (req) => {
           if (!p.ticker) throw new Error("Producto sin ticker");
           got = await yahooLatest(p.ticker);
         } else if (sourceName.includes("investing")) {
-          got = await investingLatest(p.nombre);
+          got = await investingLatest(p.nombre, p.isin || null);
         } else if (sourceName.includes("bankinter")) {
           got = await bankinterLatest(p.isin || "");
         } else {
