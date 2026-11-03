@@ -73,24 +73,24 @@ async function investingLatest(productName: string, isin: string | null) {
   const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36", "Accept-Language": "es-ES,es;q=0.9,en;q=0.8" } });
   if (!r.ok) throw new Error(`Investing HTTP ${r.status}`);
   const html = await r.text();
-  const text = html.replace(/<script[\\s\\S]*?<\\/script>/gi, " ").replace(/<style[\\s\\S]*?<\\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;|&#160;/gi, " ").replace(/&amp;/gi, "&").replace(/\\s+/g, " ");
+  const text = html.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;|&#160;/gi, " ").replace(/&amp;/gi, "&").replace(/\s+/g, " ");
   const candidates: Array<{fecha:string;cierre:number}> = [];
-  const rowRegex = /(\\d{1,2})[.\\/-](\\d{1,2})[.\\/-](\\d{4})[\\s\\S]{0,180}?([0-9]+(?:[.,][0-9]+)*)/g;
+  const rowRegex = /(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})[\s\S]{0,180}?([0-9]+(?:[.,][0-9]+)*)/g;
   for (const m of text.matchAll(rowRegex)) {
     const day = String(m[1]).padStart(2, "0"), month = String(m[2]).padStart(2, "0");
     const raw = m[4];
-    const cierre = Number(raw.includes(",") ? raw.replace(/\\./g, "").replace(",", ".") : raw);
+    const cierre = Number(raw.includes(",") ? raw.replace(/\./g, "").replace(",", ".") : raw);
     if (Number.isFinite(cierre) && cierre > 0 && Number(month) >= 1 && Number(month) <= 12 && Number(day) >= 1 && Number(day) <= 31)
       candidates.push({ fecha: `${m[3]}-${month}-${day}`, cierre });
   }
   if (!candidates.length) {
-    const dateMatches = [...html.matchAll(/(\\d{2})[-\\/]([A-Za-z]{3}|\\d{2})[-\\/](\\d{4})/g)];
+    const dateMatches = [...html.matchAll(/(\d{2})[-\/]([A-Za-z]{3}|\d{2})[-\/](\d{4})/g)];
     const valueMatches = [...html.matchAll(/(?:Último|Last|Close)[^0-9]{0,100}([0-9]+[.,][0-9]+)/gi)];
     if (dateMatches.length && valueMatches.length) {
       const d = dateMatches[dateMatches.length - 1];
       const monthNames: Record<string,string> = { ene:"01",feb:"02",mar:"03",abr:"04",may:"05",jun:"06",jul:"07",ago:"08",sep:"09",oct:"10",nov:"11",dic:"12" };
       const month = monthNames[(d[2] || "").toLowerCase()] || d[2];
-      const raw = valueMatches[valueMatches.length - 1][1].replace(/\\./g, "").replace(",", ".");
+      const raw = valueMatches[valueMatches.length - 1][1].replace(/\./g, "").replace(",", ".");
       candidates.push({ fecha: `${d[3]}-${String(month).padStart(2,"0")}-${d[1]}`, cierre: Number(raw) });
     }
   }
