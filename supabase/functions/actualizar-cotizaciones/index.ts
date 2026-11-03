@@ -247,7 +247,9 @@ Deno.serve(async (req) => {
       try {
         const sourceName = String(source.nombre || "").toLowerCase();
         if (/CABK OPORTUNIDAD|CABK DESTINO 2030/i.test(p.nombre)) {
-          got = await caixabankPensionLatest(p.nombre);
+          // Estos dos productos tienen Investing como fuente configurada.
+          // Consultar esa fuente evita depender del formato cambiante de la ficha de CaixaBank.
+          got = await investingLatest(p.nombre, p.isin || null);
         } else if (sourceName.includes("yahoo") || sourceName.includes("newton")) {
           if (!p.ticker) throw new Error("Producto sin ticker");
           got = await yahooLatest(p.ticker);
@@ -266,6 +268,12 @@ Deno.serve(async (req) => {
     }
 
     if (!got || !usedLink) {
+      // No generar errores repetidos para fondos cuya fuente aún no dispone
+      // de un adaptador automático. Se mantienen sus históricos intactos.
+      if (lastError.includes("No hay adaptador Investing configurado")) {
+        detalles.push({ producto: p.nombre, estado: "pendiente_adaptador", error: "Fuente seleccionada sin adaptador automático; no se modificaron datos." });
+        continue;
+      }
       errores++;
       detalles.push({ producto: p.nombre, estado: "error", error: lastError || "No se pudo actualizar" });
       continue;
