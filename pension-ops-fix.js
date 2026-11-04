@@ -51,12 +51,20 @@ function rebuild(){
     let importe=N(o.importe_neto);
     if(isA && importe===0) importe=Math.abs(part*N(o.precio_unitario));
 
+    // La posición neta debe incluir todos los movimientos de títulos.
+    // En particular, Traspaso conserva el signo de cantidad:
+    // negativo = salida del plan; positivo = entrada al plan.
+    let movimiento=0;
+    if(['compra','aportacion','acciones liberadas','dividendo en acciones','split'].includes(tipo)) movimiento=Math.abs(part);
+    else if(tipo==='venta') movimiento=-Math.abs(part);
+    else if(tipo==='ajuste de posicion'||tipo==='traspaso') movimiento=part;
+
     const anteriores=total;
     if(isA){
       num++;
       total+=importe;
-      totalPart+=part;
     }
+    totalPart+=movimiento;
 
     return [
       dateFmt(o.fecha),
@@ -64,7 +72,7 @@ function rebuild(){
       anteriores,
       isA?importe:0,
       total,
-      isA?part:0,
+      movimiento!==0?movimiento:0,
       totalPart
     ];
   }).reverse();
@@ -77,7 +85,7 @@ function rebuild(){
     'APORTACIONES ANTERIORES',
     'IMPORTE APORTACIÓN',
     'TOTAL APORTADO',
-    'PARTICIPACIONES APORTACIÓN',
+    'MOVIMIENTO PARTICIPACIONES',
     'TOTAL PARTICIPACIONES'
   ].forEach(x=>{
     const th=document.createElement('th');
