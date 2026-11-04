@@ -1,8 +1,4 @@
-/* Corrección definitiva de la tabla Operaciones de planes de pensiones.
-   Estructura acordada:
-   FECHA | Nº APORTACIÓN | APORTACIONES ANTERIORES | IMPORTE APORTACIÓN |
-   TOTAL APORTADO | PARTICIPACIONES APORTACIÓN | TOTAL PARTICIPACIONES
-*/
+/* Tabla de operaciones de planes: distingue aportaciones y traspasos en el capital acumulado. */
 (function(){
 'use strict';
 
@@ -19,82 +15,57 @@ const dateFmt=v=>{
   return s;
 };
 
-function getState(){
-  try{return typeof S!=='undefined'?S:null}catch(_){return null}
-}
-
-function table(){
+function getState(){try{return typeof S!=='undefined'?S:null}catch(_){return null}}
+function findTable(){
   return [...document.querySelectorAll('table')].find(t=>{
     const x=norm(t.innerText||'');
-    return x.includes('aportaciones anteriores') && (x.includes('aportacion actual') || x.includes('importe aportacion'));
+    return x.includes('aportaciones anteriores') && (x.includes('aportacion actual')||x.includes('importe aportacion')||x.includes('movimiento capital'));
   })||null;
 }
-
-function ops(){
+function getOperations(){
   const state=getState();
-  if(!state || !Array.isArray(state.o))return [];
+  if(!state||!Array.isArray(state.o))return [];
   let a=state.o.slice();
   if(state.context)a=a.filter(o=>String(o.producto_id)===String(state.context));
-  return a.filter(o=>o.fecha)
-    .sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha))||String(a.id??'').localeCompare(String(b.id??'')));
+  return a.filter(o=>o.fecha).sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha))||String(a.id??'').localeCompare(String(b.id??'')));
 }
-
+function capitalMovement(o){
+  const tipo=norm(o.tipo_operacion||'');
+  const net=N(o.importe_neto);
+  const gross=N(o.importe_bruto);
+  const amount=net!==0?net:gross;
+  if(tipo==='aportacion')return amount!==0?Math.abs(amount):Math.abs(N(o.cantidad)*N(o.precio_unitario));
+  if(tipo==='traspaso')return amount!==0?amount:(N(o.cantidad)*N(o.precio_unitario));
+  if(tipo==='compra')return amount!==0?Math.abs(amount):Math.abs(N(o.cantidad)*N(o.precio_unitario));
+  if(tipo==='venta')return -Math.abs(amount);
+  return 0;
+}
 function rebuild(){
-  const t=table(), a=ops();
-  if(!t || !a.length)return false;
-
-  let num=0,total=0,totalPart=0;
+  const t=findTable(),a=getOperations();
+  if(!t||!a.length)return false;
+  let numero=0,capital=0,totalPart=0;
   const rows=a.map(o=>{
     const tipo=norm(o.tipo_operacion||'');
-    const isA=tipo==='aportacion' || tipo==='aportación';
+    const isA=tipo==='aportacion';
     const part=N(o.cantidad);
-    let importe=N(o.importe_neto);
-    if(isA && importe===0) importe=Math.abs(part*N(o.precio_unitario));
-
-    // La posición neta debe incluir todos los movimientos de títulos.
-    // En particular, Traspaso conserva el signo de cantidad:
-    // negativo = salida del plan; positivo = entrada al plan.
-    let movimiento=0;
-    if(['compra','aportacion','acciones liberadas','dividendo en acciones','split'].includes(tipo)) movimiento=Math.abs(part);
-    else if(tipo==='venta') movimiento=-Math.abs(part);
-    else if(tipo==='ajuste de posicion'||tipo==='traspaso') movimiento=part;
-
-    const anteriores=total;
-    if(isA){
-      num++;
-      total+=importe;
-    }
-    totalPart+=movimiento;
-
-    return [
-      dateFmt(o.fecha),
-      isA?num:'',
-      anteriores,
-      isA?importe:0,
-      total,
-      movimiento!==0?movimiento:0,
-      totalPart
-    ];
+    const prev=capital;
+    const movCapital=capitalMovement(o);
+    if(isA)numero++;
+    capital+=movCapital;
+    let movPart=0;
+    if(['compra','aportacion','acciones liberadas','dividendo en acciones','split'].includes(tipo))movPart=Math.abs(part);
+    else if(tipo==='venta')movPart=-Math.abs(part);
+    else if(tipo==='ajuste de posicion'||tipo==='traspaso')movPart=part;
+    totalPart+=movPart;
+    return [dateFmt(o.fecha),isA?numero:'',prev,movCapital,capital,movPart,totalPart];
   }).reverse();
 
   t.replaceChildren();
-  const h=document.createElement('thead'),trh=document.createElement('tr');
-  [
-    'FECHA',
-    'Nº APORTACIÓN',
-    'APORTACIONES ANTERIORES',
-    'IMPORTE APORTACIÓN',
-    'TOTAL APORTADO',
-    'MOVIMIENTO PARTICIPACIONES',
-    'TOTAL PARTICIPACIONES'
-  ].forEach(x=>{
-    const th=document.createElement('th');
-    th.textContent=x;
-    trh.appendChild(th);
+  const h=document.createElement('thead'),hr=document.createElement('tr');
+  ['FECHA','Nº APORTACIÓN','CAPITAL ANTERIOR','MOVIMIENTO DE CAPITAL','CAPITAL TOTAL','MOVIMIENTO PARTICIPACIONES','TOTAL PARTICIPACIONES'].forEach(x=>{
+    const th=document.createElement('th');th.textContent=x;hr.appendChild(th);
   });
-  h.appendChild(trh);
-  t.appendChild(h);
-
+  h.appendChild(hr);t.appendChild(h);
   const b=document.createElement('tbody');
   rows.forEach(r=>{
     const tr=document.createElement('tr');
@@ -109,60 +80,24 @@ function rebuild(){
     b.appendChild(tr);
   });
   t.appendChild(b);
-
-  // Resumen final: ambos acumulados del plan, siempre visibles.
-  const f=document.createElement('tfoot');
-  const fr=document.createElement('tr');
-  const label=document.createElement('td');
-  label.colSpan=4;
-  label.textContent='TOTAL APORTACIONES ACUMULADAS';
-  label.style.textAlign='left';
-  label.style.fontWeight='800';
-  const value=document.createElement('td');
-  value.textContent=money(total);
-  value.style.textAlign='right';
-  value.style.fontWeight='800';
-  const partLabel=document.createElement('td');
-  partLabel.textContent='TOTAL PARTICIPACIONES';
-  partLabel.style.textAlign='right';
-  partLabel.style.fontWeight='800';
-  const partValue=document.createElement('td');
-  partValue.textContent=qtyFmt(totalPart);
-  partValue.style.textAlign='right';
-  partValue.style.fontWeight='800';
-  fr.append(label,value,partLabel,partValue);
-  f.appendChild(fr);
-  t.appendChild(f);
-
-  // Las 7 columnas deben caber en la pantalla; no ocultar la última mediante un min-width artificial.
-  t.style.width='100%';
-  t.style.minWidth='0';
-  t.style.tableLayout='fixed';
-  t.dataset.pensionOpsFix='v6';
+  const f=document.createElement('tfoot'),fr=document.createElement('tr');
+  const label=document.createElement('td');label.colSpan=4;label.textContent='CAPITAL NETO REGISTRADO';label.style.textAlign='left';label.style.fontWeight='800';
+  const value=document.createElement('td');value.textContent=money(capital);value.style.textAlign='right';value.style.fontWeight='800';
+  const pl=document.createElement('td');pl.textContent='TOTAL PARTICIPACIONES';pl.style.textAlign='right';pl.style.fontWeight='800';
+  const pv=document.createElement('td');pv.textContent=qtyFmt(totalPart);pv.style.textAlign='right';pv.style.fontWeight='800';
+  fr.append(label,value,pl,pv);f.appendChild(fr);t.appendChild(f);
+  t.style.width='100%';t.style.minWidth='0';t.style.tableLayout='fixed';t.dataset.pensionOpsFix='v7';
   return true;
 }
-
 function fixDates(){
   document.querySelectorAll('table td,table th').forEach(c=>{
     const s=c.textContent.trim();
-    if(/^\d{1,2}[\/-]\d{1,2}[\/-]\d{4}$/.test(s)||/^\d{4}[\/-]\d{1,2}[\/-]\d{1,2}$/.test(s))c.textContent=dateFmt(s);
+    if(/^\d{1,2}[\/-]\d{1,2}[\/-]\d{4}$/.test(s)||/^\d{4}[\/-]\d{1,2}[\/-]\d{2}$/.test(s))c.textContent=dateFmt(s);
   });
 }
-
 let busy=false;
-function apply(){
-  if(busy)return;
-  busy=true;
-  try{rebuild();fixDates()}catch(e){console.error('pension-ops-fix',e)}
-  busy=false;
-}
-
+function apply(){if(busy)return;busy=true;try{rebuild();fixDates()}catch(e){console.error('pension-ops-fix',e)}busy=false}
 const ob=new MutationObserver(()=>setTimeout(apply,30));
-function start(){
-  ob.observe(document.body,{childList:true,subtree:true});
-  apply();
-  [100,300,700,1200,2000,4000,7000].forEach(x=>setTimeout(apply,x));
-  setInterval(apply,1500);
-}
+function start(){ob.observe(document.body,{childList:true,subtree:true});apply();[100,300,700,1200,2000,4000,7000].forEach(x=>setTimeout(apply,x));setInterval(apply,1500)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
