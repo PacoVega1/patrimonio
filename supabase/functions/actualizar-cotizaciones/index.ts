@@ -23,6 +23,26 @@ function toNumber(v: unknown) {
   return Number.isFinite(n) ? n : null;
 }
 
+
+async function quantityAtDate(supabase: any, productId: string, userId: string, date: string) {
+  const { data: ops, error } = await supabase
+    .from("operaciones")
+    .select("fecha,tipo_operacion,cantidad")
+    .eq("producto_id", productId)
+    .eq("user_id", userId)
+    .lte("fecha", date);
+  if (error) throw new Error("No se pudieron calcular las participaciones: " + error.message);
+  return (ops || []).reduce((sum: number, op: any) => {
+    const type = String(op.tipo_operacion || "").toLowerCase();
+    const qty = Number(op.cantidad || 0);
+    if (type.includes("traspaso")) return sum + qty; // Los traspasos ya guardan signo: entrada +, salida -.
+    if (type.includes("compra") || type.includes("aport") || type.includes("suscrip")) return sum + Math.abs(qty);
+    if (type.includes("venta") || type.includes("reemb") || type.includes("retir")) return sum - Math.abs(qty);
+    if (type.includes("ajuste de posición") || type.includes("ajuste de posicion")) return sum + qty;
+    return sum;
+  }, 0);
+}
+
 async function yahooLatest(ticker: string) {
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=10d&interval=1d&events=history`;
   const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
@@ -308,15 +328,8 @@ Deno.serve(async (req) => {
         const { data: existingVals } = await supabase.from("valoraciones_historicas").select("fecha,origen").eq("producto_id", p.id);
         const knownAuto = new Set((existingVals || []).filter((x: any) => x.origen === "automatico").map((x: any) => String(x.fecha)));
         const knownManual = new Set((existingVals || []).filter((x: any) => x.origen === "manual").map((x: any) => String(x.fecha)));
-        const { data: ops } = await supabase.from("operaciones").select("tipo_operacion,cantidad").eq("producto_id", p.id).eq("user_id", userId);
-        let quantity = (ops || []).reduce((s: number, x: any) => {
-          const tipo = String(x.tipo_operacion || "").toLowerCase();
-          const qty = Number(x.cantidad || 0);
-          if (tipo.includes("compra") || tipo.includes("aport") || tipo.includes("suscrip")) return s + qty;
-          if (tipo.includes("venta") || tipo.includes("reemb") || tipo.includes("retir")) return s - qty;
-          return s;
-        }, 0);
-        if (!ops?.length) {
+        let quantity = await quantityAtDate(supabase, p.id, userId, history[0]?.fecha || date);
+        if (quantity === 0) {
           const { data: components } = await supabase.from("cartera_componentes").select("cantidad").eq("producto_id", p.id).eq("activo", true);
           quantity = (components || []).reduce((s: number, x: any) => s + Number(x.cantidad || 0), 0);
         }
@@ -381,6 +394,23 @@ Deno.serve(async (req) => {
         detalles.push({ producto: p.nombre, estado: "discrepancia", manual: manual.precio_unitario, automatico: price, fecha: date });
       }
 
+      // Recalcular siempre la posición existente en la fecha de la cotización.
+      // Corrige registros automáticos antiguos que se guardaron con cantidad/total cero
+      // y aplica los traspasos con su signo, sin tocar valoraciones manuales.
+      const quantity = Math.max(0, await quantityAtDate(supabase, p.id, userId, date));
+      const valuation = {
+        user_id: userId,
+        producto_id: p.id,
+        fecha: date,
+        cantidad: quantity,
+        precio_unitario: price,
+        valor_total: price * quantity,
+        moneda: got.moneda || p.moneda || "EUR",
+        origen: "automatico",
+        fuente: source.nombre,
+        es_valida: true,
+        observaciones: `Actualización automática mediante ${source.nombre}. Participaciones netas calculadas a fecha de cotización; traspasos incluidos. Las valoraciones manuales no se sobrescriben.`
+      };
       const { data: auto } = await supabase
         .from("valoraciones_historicas")
         .select("id")
@@ -388,49 +418,13 @@ Deno.serve(async (req) => {
         .eq("fecha", date)
         .eq("origen", "automatico")
         .maybeSingle();
-
-      if (!auto) {
-        // Obtener las participaciones netas a partir de las operaciones registradas.
-        // Si no hay operaciones, usar las cantidades de carteras; nunca enviar NULL
-        // a valor_total, que es obligatorio en la base de datos.
-        const { data: ops } = await supabase
-          .from("operaciones")
-          .select("tipo_operacion,cantidad")
-          .eq("producto_id", p.id)
-          .eq("user_id", userId);
-        let quantity = (ops || []).reduce((s: number, x: any) => {
-          const tipo = String(x.tipo_operacion || "").toLowerCase();
-          const qty = Number(x.cantidad || 0);
-          if (tipo.includes("compra") || tipo.includes("aport") || tipo.includes("suscrip")) return s + qty;
-          if (tipo.includes("venta") || tipo.includes("reemb") || tipo.includes("retir")) return s - qty;
-          return s;
-        }, 0);
-        if (!ops?.length) {
-          const { data: component } = await supabase
-            .from("cartera_componentes")
-            .select("cantidad")
-            .eq("producto_id", p.id)
-            .eq("activo", true);
-          quantity = (component || []).reduce((s: number, x: any) => s + Number(x.cantidad || 0), 0);
-        }
-        quantity = Math.max(0, quantity);
-        const { error: insV } = await supabase.from("valoraciones_historicas").insert({
-          user_id: userId,
-          producto_id: p.id,
-          fecha: date,
-          cantidad: quantity,
-          precio_unitario: price,
-          valor_total: price * quantity,
-          moneda: got.moneda || p.moneda || "EUR",
-          origen: "automatico",
-          fuente: source.nombre,
-          observaciones: `Actualización automática mediante ${source.nombre}. Las valoraciones manuales no se sobrescriben.`
-        });
-        if (insV) {
-          errores++;
-          detalles.push({ producto: p.nombre, estado: "error", error: insV.message });
-          continue;
-        }
+      const write = auto
+        ? await supabase.from("valoraciones_historicas").update(valuation).eq("id", auto.id)
+        : await supabase.from("valoraciones_historicas").insert(valuation);
+      if (write.error) {
+        errores++;
+        detalles.push({ producto: p.nombre, estado: "error", error: write.error.message });
+        continue;
       }
     }
 
