@@ -19,7 +19,7 @@ function getState(){try{return typeof S!=='undefined'?S:null}catch(_){return nul
 function findTable(){
   return [...document.querySelectorAll('table')].find(t=>{
     const x=norm(t.innerText||'');
-    return x.includes('aportaciones anteriores') && (x.includes('aportacion actual')||x.includes('importe aportacion')||x.includes('movimiento capital'));
+    return x.includes('capital anterior') && x.includes('movimiento de capital') && x.includes('total participaciones');
   })||null;
 }
 function getOperations(){
