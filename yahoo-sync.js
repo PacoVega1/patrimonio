@@ -29,6 +29,28 @@ async function importYahooHistory(){const pid=$('impP').value,p=S.p.find(x=>x.id
  };
  window.historyNav=function(id,step){const qh=histQ(id),vh=histV(id),dates=new Set([...qh,...vh].map(x=>String(x.fecha).slice(0,10)));const pages=Math.max(1,Math.ceil(dates.size/25));S.historyPage=Math.max(0,Math.min(pages-1,S.historyPage+step));const box=document.getElementById('quoteHistoryBox');if(box)box.outerHTML=window.quoteHistory(id)};
  const originalOpsHistory=window.opsHistory;
- window.opsHistory=function(id){const p=S.p.find(x=>x.id===id);if(!p||!String(tn(p)).toLowerCase().includes('pension'))return originalOpsHistory(id);const a=S.o.filter(x=>x.producto_id===id).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));if(!a.length)return '<div class="empty">Sin operaciones.</div>';let prior=0,count=0;const asc=a.slice().reverse();const snapshots=new Map();for(const x of asc){const t=x.tipo_operacion||'';const isA=contributionType(t);const before=prior;if(isA){prior+=Number(x.importe_neto)||0;count++}snapshots.set(x.id,{before,after:prior,count,qty:Number(x.cantidad)||0,price:Number(x.precio_unitario)||0,isA})}return `<div class="tablewrap"><table class="history pension-ops"><thead><tr><th>Fecha</th><th>Tipo</th><th>Aportaciones anteriores</th><th>Aportación actual</th><th>Total aportado</th><th>Nº aportaciones</th><th>Participaciones</th><th>Valor aportación</th></tr></thead><tbody>${a.map(x=>{const s=snapshots.get(x.id),mov=s.isA?Number(x.importe_neto)||0:0;return `<tr><td>${date(x.fecha)}</td><td>${esc(x.tipo_operacion)}</td><td>${money(s.before)}</td><td>${s.isA?money(mov):'—'}</td><td>${money(s.after)}</td><td>${s.count}</td><td>${num(s.qty)}</td><td>${s.price?num(s.price)+' €':'—'}</td></tr>`}).join('')}</tbody></table></div>`};
- const style=document.createElement('style');style.textContent='.pension-ops{min-width:1150px}.pension-ops th,.pension-ops td{font-size:12px}.pension-ops td{vertical-align:middle}';document.head.appendChild(style);
+ window.opsHistory=function(id){
+  const p=S.p.find(x=>x.id===id);
+  if(!p||!String(tn(p)).toLowerCase().includes('pension'))return originalOpsHistory(id);
+  const a=S.o.filter(x=>x.producto_id===id).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
+  if(!a.length)return '<div class="empty">Sin operaciones.</div>';
+  let prior=0,count=0;
+  const snapshots=new Map();
+  for(const x of a.slice().reverse()){
+   const t=String(x.tipo_operacion||'').trim().toLowerCase();
+   const amount=Number(x.importe_neto)||Number(x.importe_bruto)||0;
+   const isA=contributionType(x.tipo_operacion);
+   const isTransfer=t==='traspaso';
+   const movement=isA?Math.abs(amount):(isTransfer&&amount<0?amount:0);
+   const before=prior; prior+=movement; if(isA)count++;
+   snapshots.set(x.id,{before,after:prior,count,qty:Number(x.cantidad)||0,price:Number(x.precio_unitario)||0,isA,isTransfer,movement});
+  }
+  const rows=a.map(x=>{
+   const z=snapshots.get(x.id),oid=String(x.id).replace(/[^a-f0-9-]/gi,'');
+   const movement=z.movement;
+   const label=z.isTransfer?(movement<0?'Traspaso de salida':'Traspaso recibido'):x.tipo_operacion;
+   return '<tr><td>'+date(x.fecha)+'</td><td>'+esc(label)+'</td><td>'+money(z.before)+'</td><td>'+(movement?money(movement):'—')+'</td><td>'+money(z.after)+'</td><td>'+(z.isA?z.count:'—')+'</td><td>'+num(z.qty)+'</td><td>'+(z.price?num(z.price)+' €':'—')+'</td><td class="pension-actions"><button class="btn alt" type="button" onclick="editOperation(\''+oid+'\')">Modificar</button> <button class="btn red" type="button" onclick="deleteOperation(\''+oid+'\')">Eliminar</button></td></tr>';
+  }).join('');
+  return '<div class="tablewrap pension-ops-wrap"><table class="history pension-ops"><thead><tr><th>Fecha</th><th>Tipo</th><th>Aportaciones anteriores</th><th>Aportación actual</th><th>Total aportado</th><th>Nº aportaciones</th><th>Participaciones</th><th>Valor aportación</th><th>Acciones</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+ }; const style=document.createElement('style');style.textContent='.pension-ops{width:100%;min-width:0;table-layout:auto}.pension-ops th,.pension-ops td{font-size:12px;padding:6px 7px;white-space:nowrap}.pension-ops td{vertical-align:middle}.pension-actions{min-width:150px}.pension-ops-wrap{max-width:100%;overflow-x:auto}';document.head.appendChild(style);
 })();
