@@ -58,6 +58,7 @@ function rebuild(){
     else if(tipo==='ajuste de posicion'||tipo==='traspaso')movPart=part;
     totalPart+=movPart;
     const concepto=tipo==='otros'?'Revalorización anterior (informativa)':tipo==='traspaso'?(part<0?'Traspaso de salida':'Participaciones recibidas'):isA?'Aportación':(o.tipo_operacion||'');
+    const movimientoVisible=tipo==='otros'?(N(o.importe_neto)||N(o.importe_bruto)):movCapital;
     return [dateFmt(o.fecha),concepto,isA?numero:'',prev,movimientoVisible,capital,movPart,N(o.precio_unitario),totalPart];
   }).reverse();
 
