@@ -35,7 +35,7 @@ function capitalMovement(o){
   const gross=N(o.importe_bruto);
   const amount=net!==0?net:gross;
   if(tipo==='aportacion')return amount!==0?Math.abs(amount):Math.abs(N(o.cantidad)*N(o.precio_unitario));
-  if(tipo==='traspaso')return amount!==0?amount:(N(o.cantidad)*N(o.precio_unitario));
+  if(tipo==='traspaso')return amount<0?amount:0; // El traspaso recibido no es aportación personal; el saliente sí resta capital.
   if(tipo==='compra')return amount!==0?Math.abs(amount):Math.abs(N(o.cantidad)*N(o.precio_unitario));
   if(tipo==='venta')return -Math.abs(amount);
   return 0;
@@ -57,12 +57,12 @@ function rebuild(){
     else if(tipo==='venta')movPart=-Math.abs(part);
     else if(tipo==='ajuste de posicion'||tipo==='traspaso')movPart=part;
     totalPart+=movPart;
-    return [dateFmt(o.fecha),isA?numero:'',prev,movCapital,capital,movPart,totalPart];
+    return [dateFmt(o.fecha),isA?numero:'',prev,movCapital,capital,movPart,N(o.precio_unitario),totalPart];
   }).reverse();
 
   t.replaceChildren();
   const h=document.createElement('thead'),hr=document.createElement('tr');
-  ['FECHA','Nº APORTACIÓN','CAPITAL ANTERIOR','MOVIMIENTO DE CAPITAL','CAPITAL TOTAL','MOVIMIENTO PARTICIPACIONES','TOTAL PARTICIPACIONES'].forEach(x=>{
+  ['FECHA','Nº APORTACIÓN','CAPITAL ANTERIOR','MOVIMIENTO DE CAPITAL','CAPITAL TOTAL','MOVIMIENTO PARTICIPACIONES','VALOR PARTICIPACIÓN (€)','TOTAL PARTICIPACIONES'].forEach(x=>{
     const th=document.createElement('th');th.textContent=x;hr.appendChild(th);
   });
   h.appendChild(hr);t.appendChild(h);
@@ -86,7 +86,7 @@ function rebuild(){
   const pl=document.createElement('td');pl.textContent='TOTAL PARTICIPACIONES';pl.style.textAlign='right';pl.style.fontWeight='800';
   const pv=document.createElement('td');pv.textContent=qtyFmt(totalPart);pv.style.textAlign='right';pv.style.fontWeight='800';
   fr.append(label,value,pl,pv);f.appendChild(fr);t.appendChild(f);
-  t.style.width='100%';t.style.minWidth='0';t.style.tableLayout='fixed';t.dataset.pensionOpsFix='v7';
+  t.style.width='100%';t.style.minWidth='0';t.style.tableLayout='fixed';t.dataset.pensionOpsFix='v8';
   return true;
 }
 function fixDates(){
