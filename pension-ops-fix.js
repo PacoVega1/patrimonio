@@ -57,7 +57,8 @@ function rebuild(){
     else if(tipo==='venta')movPart=-Math.abs(part);
     else if(tipo==='ajuste de posicion'||tipo==='traspaso')movPart=part;
     totalPart+=movPart;
-    const concepto=tipo==='otros'?'Revalorización anterior (informativa)':tipo==='traspaso'?(part<0?'Traspaso de salida':'Participaciones recibidas'):isA?'Aportación':(o.tipo_operacion||'');\n    return [dateFmt(o.fecha),concepto,isA?numero:'',prev,movCapital,capital,movPart,N(o.precio_unitario),totalPart];
+    const concepto=tipo==='otros'?'Revalorización anterior (informativa)':tipo==='traspaso'?(part<0?'Traspaso de salida':'Participaciones recibidas'):isA?'Aportación':(o.tipo_operacion||'');
+    return [dateFmt(o.fecha),concepto,isA?numero:'',prev,movCapital,capital,movPart,N(o.precio_unitario),totalPart];
   }).reverse();
 
   t.replaceChildren();
@@ -71,8 +72,9 @@ function rebuild(){
     const tr=document.createElement('tr');
     r.forEach((v,i)=>{
       const td=document.createElement('td');
-      if(i===2||i===3||i===4)td.textContent=money(v);
-      else if(i===5||i===6)td.textContent=v?qtyFmt(v):'—';
+      if(i===3||i===4||i===5)td.textContent=money(v);
+      else if(i===6||i===8)td.textContent=v?qtyFmt(v):'—';
+      else if(i===7)td.textContent=v?new Intl.NumberFormat('es-ES',{minimumFractionDigits:5,maximumFractionDigits:8}).format(v):'—';
       else td.textContent=v;
       td.style.textAlign=i===0||i===1?'left':'right';
       tr.appendChild(td);
