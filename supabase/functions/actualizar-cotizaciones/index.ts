@@ -53,7 +53,19 @@ async function yahooLatest(ticker: string) {
   for (let i = q.timestamp.length - 1; i >= 0; i--) {
     const close = toNumber(q.indicators?.quote?.[0]?.close?.[i]);
     if (close !== null) {
-      return { fecha: isoDate(q.timestamp[i]), cierre: close, moneda: q.meta?.currency || "EUR" };
+      // Hora oficial de cierre de la sesión según los metadatos de la bolsa en Yahoo.
+      // No se utiliza la hora de importación ni la hora del servidor.
+      let hora_cierre: string | null = null;
+      const closeTs = q.meta?.currentTradingPeriod?.regular?.end;
+      const timezone = q.meta?.exchangeTimezoneName;
+      if (closeTs && timezone) {
+        try {
+          hora_cierre = new Intl.DateTimeFormat("en-GB", {
+            timeZone: timezone, hour: "2-digit", minute: "2-digit", hourCycle: "h23"
+          }).format(new Date(closeTs * 1000));
+        } catch { hora_cierre = null; }
+      }
+      return { fecha: isoDate(q.timestamp[i]), cierre: close, hora_cierre, moneda: q.meta?.currency || "EUR" };
     }
   }
   throw new Error("Yahoo no devuelve un cierre válido");
@@ -351,7 +363,7 @@ Deno.serve(async (req) => {
     // guardan en cotizaciones_historicas. No se modifica ningún registro.
     const { data: existingQuote } = await supabase
       .from("cotizaciones_historicas")
-      .select("id,cierre,fecha")
+      .select("id,cierre,fecha,hora_cierre,origen")
       .eq("producto_id", p.id)
       .eq("fecha", date)
       .maybeSingle();
@@ -361,6 +373,7 @@ Deno.serve(async (req) => {
         producto_id: p.id,
         fecha: date,
         cierre: price,
+        hora_cierre: got.hora_cierre || null,
         moneda: got.moneda || p.moneda || "EUR",
         fuente_id: sourceId,
         tipo_precio: "cierre",
@@ -371,6 +384,8 @@ Deno.serve(async (req) => {
         detalles.push({ producto: p.nombre, estado: "error", error: insQ.message });
         continue;
       }
+    } else if (got.hora_cierre && !existingQuote.hora_cierre && existingQuote.origen !== "manual") {
+      await supabase.from("cotizaciones_historicas").update({ hora_cierre: got.hora_cierre }).eq("id", existingQuote.id);
     } else if (Math.abs(Number(existingQuote.cierre) - price) > 0.0000001) {
       detalles.push({ producto: p.nombre, estado: "discrepancia", manual: existingQuote.cierre, automatico: price, fecha: date });
       discrepancias++;
