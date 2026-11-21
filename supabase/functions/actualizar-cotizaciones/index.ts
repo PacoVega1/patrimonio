@@ -384,12 +384,12 @@ Deno.serve(async (req) => {
         detalles.push({ producto: p.nombre, estado: "error", error: insQ.message });
         continue;
       }
-    } else if (got.hora_cierre && !existingQuote.hora_cierre && existingQuote.origen !== "manual") {
-      await supabase.from("cotizaciones_historicas").update({ hora_cierre: got.hora_cierre }).eq("id", existingQuote.id);
     } else if (Math.abs(Number(existingQuote.cierre) - price) > 0.0000001) {
       detalles.push({ producto: p.nombre, estado: "discrepancia", manual: existingQuote.cierre, automatico: price, fecha: date });
       discrepancias++;
       continue;
+    } else if (got.hora_cierre && !existingQuote.hora_cierre && existingQuote.origen !== "manual") {
+      await supabase.from("cotizaciones_historicas").update({ hora_cierre: got.hora_cierre }).eq("id", existingQuote.id);
     }
 
     // Para fondos/planes, la valoración automática se registra aparte y jamás
@@ -417,6 +417,7 @@ Deno.serve(async (req) => {
         user_id: userId,
         producto_id: p.id,
         fecha: date,
+        hora_cierre: got.hora_cierre || null,
         cantidad: quantity,
         precio_unitario: price,
         valor_total: price * quantity,
