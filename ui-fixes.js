@@ -3,7 +3,7 @@ const norm=s=>String(s??'').trim().toLowerCase().normalize('NFD').replace(/[\u03
 const dateISO=s=>{const m=String(s||'').trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);return m?m[3]+'-'+m[2]+'-'+m[1]:String(s||'').slice(0,10)};
 function findOperationsTable(){return [...document.querySelectorAll('table')].find(t=>{const h=norm(t.querySelector('thead')?.innerText||t.rows?.[0]?.innerText||'');return h.includes('fecha')&&h.includes('aportaciones anteriores')&&h.includes('aportacion actual')&&h.includes('total aportado')})||null}
 function apply(){
- const t=findOperationsTable(),state=window.S;if(!t||!state||!Array.isArray(state.o))return;
+ const t=findOperationsTable(),state=window.S;if(!t||!state||!Array.isArray(state.o)||[...(t.querySelector('thead tr')?.cells||[])].some(c=>norm(c.textContent)==='acciones'))return;
  const headers=t.querySelector('thead tr')||t.rows[0];if(!headers)return;
  if(![...headers.cells].some(c=>norm(c.textContent)==='acciones')){const th=document.createElement('th');th.textContent='ACCIONES';headers.appendChild(th)}
  const rows=[...(t.querySelector('tbody')?.rows||[])];const pid=state.context;
