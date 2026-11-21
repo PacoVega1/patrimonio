@@ -57,12 +57,12 @@ function rebuild(){
     else if(tipo==='venta')movPart=-Math.abs(part);
     else if(tipo==='ajuste de posicion'||tipo==='traspaso')movPart=part;
     totalPart+=movPart;
-    return [dateFmt(o.fecha),isA?numero:'',prev,movCapital,capital,movPart,N(o.precio_unitario),totalPart];
+    const concepto=tipo==='otros'?'Revalorización anterior (informativa)':tipo==='traspaso'?(part<0?'Traspaso de salida':'Participaciones recibidas'):isA?'Aportación':(o.tipo_operacion||'');\n    return [dateFmt(o.fecha),concepto,isA?numero:'',prev,movCapital,capital,movPart,N(o.precio_unitario),totalPart];
   }).reverse();
 
   t.replaceChildren();
   const h=document.createElement('thead'),hr=document.createElement('tr');
-  ['FECHA','Nº APORTACIÓN','CAPITAL ANTERIOR','MOVIMIENTO DE CAPITAL','CAPITAL TOTAL','MOVIMIENTO PARTICIPACIONES','VALOR PARTICIPACIÓN (€)','TOTAL PARTICIPACIONES'].forEach(x=>{
+  ['FECHA','CONCEPTO','Nº APORTACIÓN','CAPITAL ANTERIOR','MOVIMIENTO DE CAPITAL','CAPITAL TOTAL','MOVIMIENTO PARTICIPACIONES','VALOR PARTICIPACIÓN (€)','TOTAL PARTICIPACIONES'].forEach(x=>{
     const th=document.createElement('th');th.textContent=x;hr.appendChild(th);
   });
   h.appendChild(hr);t.appendChild(h);
@@ -74,19 +74,19 @@ function rebuild(){
       if(i===2||i===3||i===4)td.textContent=money(v);
       else if(i===5||i===6)td.textContent=v?qtyFmt(v):'—';
       else td.textContent=v;
-      td.style.textAlign=i===0?'left':'right';
+      td.style.textAlign=i===0||i===1?'left':'right';
       tr.appendChild(td);
     });
     b.appendChild(tr);
   });
   t.appendChild(b);
   const f=document.createElement('tfoot'),fr=document.createElement('tr');
-  const label=document.createElement('td');label.colSpan=4;label.textContent='CAPITAL NETO REGISTRADO';label.style.textAlign='left';label.style.fontWeight='800';
+  const label=document.createElement('td');label.colSpan=5;label.textContent='CAPITAL NETO REGISTRADO';label.style.textAlign='left';label.style.fontWeight='800';
   const value=document.createElement('td');value.textContent=money(capital);value.style.textAlign='right';value.style.fontWeight='800';
   const pl=document.createElement('td');pl.textContent='TOTAL PARTICIPACIONES';pl.style.textAlign='right';pl.style.fontWeight='800';
   const pv=document.createElement('td');pv.textContent=qtyFmt(totalPart);pv.style.textAlign='right';pv.style.fontWeight='800';
-  fr.append(label,value,pl,pv);f.appendChild(fr);t.appendChild(f);
-  t.style.width='100%';t.style.minWidth='0';t.style.tableLayout='fixed';t.dataset.pensionOpsFix='v8';
+  const blank=document.createElement('td');fr.append(label,value,pl,blank,pv);f.appendChild(fr);t.appendChild(f);
+  t.style.width='100%';t.style.minWidth='0';t.style.tableLayout='fixed';t.dataset.pensionOpsFix='v9';
   return true;
 }
 function fixDates(){
