@@ -45,7 +45,7 @@ const histV=id=>S.v.filter(x=>x.producto_id===id&&String(x.fecha).slice(0,10)<=t
 const histQ=id=>S.q.filter(x=>x.producto_id===id&&String(x.fecha).slice(0,10)<=today()).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
 const lastV=id=>histV(id)[0]; const lastQ=id=>histQ(id)[0];
 const currentUnit=p=>lastQ(p.id)?.cierre??lastV(p.id)?.precio_unitario??null;
-const currentCloseTime=p=>{const q=lastQ(p.id),v=lastV(p.id);const raw=q?.hora_cierre??v?.hora_cierre??null;return raw?String(raw).slice(0,5):'—'};
+const currentCloseTime=p=>{const q=lastQ(p.id),v=lastV(p.id),sameDate=v&&String(v.fecha).slice(0,10)===String((q||v).fecha).slice(0,10),raw=q?.hora_cierre||(sameDate?v?.hora_cierre:null);return raw?String(raw).slice(0,5):'—'};
 const currentDate=p=>lastQ(p.id)?.fecha??lastV(p.id)?.fecha??null;
 function val(p){const q=lastQ(p.id),v=lastV(p.id);if(account(p))return Number(v?.valor_total)||0;if(q&&qty(p.id))return Number(q.cierre||0)*qty(p.id)*Number(q.factor_conversion||1);if(v&&v.valor_total!=null)return Number(v.valor_total)||0;return 0}
 function oldVal(p){const h=histV(p.id);return h[1]?Number(h[1].valor_total)||0:0}
