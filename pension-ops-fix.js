@@ -19,7 +19,7 @@ function getState(){try{return typeof S!=='undefined'?S:null}catch(_){return nul
 function findTable(){
   return [...document.querySelectorAll('table')].find(t=>{
     const x=norm(t.innerText||'');
-    return x.includes('capital anterior') && x.includes('movimiento de capital') && x.includes('total participaciones');
+    return (x.includes('nº aportacion')||x.includes('aportaciones anteriores')) && (x.includes('total participaciones')||x.includes('participaciones aportacion')) && (x.includes('capital anterior')||x.includes('aportaciones anteriores')||x.includes('importe aportacion')||x.includes('movimiento de capital')||x.includes('movimiento capital'));
   })||null;
 }
 function getOperations(){
@@ -27,7 +27,7 @@ function getOperations(){
   if(!state||!Array.isArray(state.o))return [];
   let a=state.o.slice();
   if(state.context)a=a.filter(o=>String(o.producto_id)===String(state.context));
-  return a.filter(o=>o.fecha).sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha))||String(a.id??'').localeCompare(String(b.id??'')));
+  return a.filter(o=>o.fecha).sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha))||(norm(a.tipo_operacion)==='otros'?-1:norm(b.tipo_operacion)==='otros'?1:0)||String(a.id??'').localeCompare(String(b.id??'')));
 }
 function capitalMovement(o){
   const tipo=norm(o.tipo_operacion||'');
@@ -58,7 +58,7 @@ function rebuild(){
     else if(tipo==='ajuste de posicion'||tipo==='traspaso')movPart=part;
     totalPart+=movPart;
     const concepto=tipo==='otros'?'Revalorización anterior (informativa)':tipo==='traspaso'?(part<0?'Traspaso de salida':'Participaciones recibidas'):isA?'Aportación':(o.tipo_operacion||'');
-    return [dateFmt(o.fecha),concepto,isA?numero:'',prev,movCapital,capital,movPart,N(o.precio_unitario),totalPart];
+    return [dateFmt(o.fecha),concepto,isA?numero:'',prev,movimientoVisible,capital,movPart,N(o.precio_unitario),totalPart];
   }).reverse();
 
   t.replaceChildren();
