@@ -16,6 +16,19 @@ const active=()=>S.p.filter(p=>p.activo!==false);
 const delta=o=>{const t=o.tipo_operacion||'',n=Number(o.cantidad)||0;if(['Compra','Aportacion','Aportación','Acciones liberadas','Dividendo en acciones','Split'].includes(t))return Math.abs(n);if(t==='Venta')return -Math.abs(n);if(['Ajuste de posición','Traspaso'].includes(t))return n;return 0};
 function costBasis(id){
  const ops=S.o.filter(x=>x.producto_id===id).slice().sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha))||String(a.id).localeCompare(String(b.id))),lots=[];
+ const prod=S.p.find(x=>x.id===id),isPension=String(tn(prod)||'').toLowerCase().includes('pension');
+ if(isPension){
+  let totalQty=0,totalCost=0;
+  for(const o of ops){
+   const t=o.tipo_operacion||'',q=Math.abs(Number(o.cantidad)||0),amount=Number(o.importe_neto)||Number(o.importe_bruto)||0,pu=Number(o.precio_unitario)||0;
+   if(t==='Aportacion'||t==='Aportación'){totalQty+=q;totalCost+=amount!==0?Math.abs(amount):q*pu}
+   else if(t==='Traspaso'){totalQty+=Number(o.cantidad)||0;if(amount<0)totalCost+=amount}
+   else if(t==='Ajuste de posición')totalQty+=Number(o.cantidad)||0;
+   else if(t==='Venta')totalQty-=q;
+   else if(t==='Acciones liberadas'||t==='Dividendo en acciones'||t==='Split')totalQty+=q;
+  }
+  return {lots,totalQty,totalCost,avg:totalQty?totalCost/totalQty:0};
+ }
  const add=(q,c)=>{if(q>0)lots.push({qty:q,cost:c})};
  for(const o of ops){const t=o.tipo_operacion||'',q=Math.abs(Number(o.cantidad)||0),pu=Number(o.precio_unitario)||0;if(!q)continue;
   if(t==='Compra'||t==='Aportacion'||t==='Aportación'){add(q,Number(o.importe_neto)>0?Number(o.importe_neto):q*pu)}
