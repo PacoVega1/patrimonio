@@ -42,7 +42,7 @@ function capitalMovement(o){
 }
 function rebuild(){
   const t=findTable(),a=getOperations();
-  if(!t||!a.length)return false;
+  if(!t||!a.length||t.dataset.operationsFixed)return false;
   let numero=0,capital=0,totalPart=0;
   const rows=a.map(o=>{
     const tipo=norm(o.tipo_operacion||'');
