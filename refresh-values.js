@@ -5,6 +5,38 @@
   const originalRender = window.render;
   if (typeof originalRender !== 'function') return;
 
+  async function updateLastQuotesTimestamp(){
+    const top = document.querySelector('#app .top');
+    const tabs = document.querySelector('#app .tabs');
+    if (!top || !tabs || typeof S === 'undefined' || typeof db === 'undefined') return;
+    let label = document.getElementById('lastQuotesUpdate');
+    if (!label) {
+      label = document.createElement('div');
+      label.id = 'lastQuotesUpdate';
+      label.className = 'last-quotes-update';
+      tabs.parentNode.insertBefore(label, tabs);
+    }
+    const ids = (S.p || []).map(p => p.id).filter(Boolean);
+    if (!ids.length) {
+      label.textContent = 'Última actualización de cotizaciones: Sin datos';
+      return;
+    }
+    const { data, error } = await db.from('productos_fuentes')
+      .select('ultima_comprobacion')
+      .in('producto_id', ids)
+      .not('ultima_comprobacion', 'is', null)
+      .order('ultima_comprobacion', { ascending: false })
+      .limit(1);
+    if (error) {
+      label.textContent = 'Última actualización de cotizaciones: No disponible';
+      return;
+    }
+    const stamp = data && data[0] && data[0].ultima_comprobacion;
+    label.textContent = stamp
+      ? 'Última actualización de cotizaciones: ' + new Intl.DateTimeFormat('es-ES', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(stamp))
+      : 'Última actualización de cotizaciones: Sin datos';
+  }
+
   function installButton(){
     const top = document.querySelector('#app .top');
     if (!top) return;
@@ -25,10 +57,11 @@
     top.appendChild(btn);
     if (capture) top.appendChild(capture);
     if (logout) top.appendChild(logout);
+    updateLastQuotesTimestamp();
     if (!document.getElementById('refreshValuesResponsiveStyle')) {
       const style = document.createElement('style');
       style.id = 'refreshValuesResponsiveStyle';
-      style.textContent = '@media(max-width:600px){#refreshValuesBtn{font-size:12px;padding:9px 10px}.top{flex-wrap:wrap}}';
+      style.textContent = '.last-quotes-update{text-align:right;color:#71809a;font-size:12px;font-weight:600;margin:-7px 2px 10px;font-variant-numeric:tabular-nums}@media(max-width:600px){#refreshValuesBtn{font-size:12px;padding:9px 10px}.top{flex-wrap:wrap}.last-quotes-update{text-align:left;margin:0 0 10px}}';
       document.head.appendChild(style);
     }
   }
