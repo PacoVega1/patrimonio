@@ -93,7 +93,8 @@ function investingUrl(productName: string, isin: string | null) {
     "IE00BYX5MD61": "https://es.investing.com/funds/ie00byx5md61-historical-data",
     "IE00BYX5NX33": "https://es.investing.com/funds/ie00byx5nx33-historical-data",
     "IE00BYX5N771": "https://es.investing.com/funds/ie00byx5n771-historical-data",
-    "IE00BYX5MX67": "https://es.investing.com/funds/ie00byx5mx67-historical-data"
+    "IE00BYX5MX67": "https://es.investing.com/funds/ie00byx5mx67-historical-data",
+    "IE00BDZVHT63": "https://es.investing.com/funds/ie00bdzvht63-historical-data"
   };
   if (isin && fidelityFunds[isin.toUpperCase()]) return fidelityFunds[isin.toUpperCase()];
   if (n.includes("DESTINO 2030")) return "https://es.investing.com/funds/cabk-destino-2030-pp-historical-data";
@@ -142,7 +143,7 @@ async function investingLatest(productName: string, isin: string | null) {
   candidates.sort((a,b) => b.fecha.localeCompare(a.fecha));
   const latest = candidates.find(x => Number.isFinite(x.cierre) && x.cierre > 0);
   if (!latest) throw new Error("Investing no devolvió una fecha y un valor liquidativo reconocibles");
-  return { ...latest, moneda: "EUR" };
+  return { ...latest, moneda: isin.toUpperCase() === "IE00BDZVHT63" ? "USD" : "EUR" };
 }
 
 async function bankinterLatest(isin: string) {
