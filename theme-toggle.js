@@ -96,8 +96,6 @@
     body.dark-mode .ptable th,body.dark-mode .history th{color:#d2deed!important}
     body.dark-mode .source-panel{background:#202f42!important;color:#f0f5fb!important;border-color:#526b89!important}
     body.dark-mode .source-panel span,body.dark-mode .source-panel small{color:#d0dceb!important}
-  `;
-
 
     /* Tipografía más nítida y con mayor contraste en los dos temas */
     body,.modalbox,button,input,select,textarea{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
@@ -117,6 +115,7 @@
     body.dark-mode .modalbox .dash-gridline{stroke:#53657c!important}
     body.dark-mode .product-modal-brand h2{color:#f2f6fc!important}
     body.dark-mode .brand-mark{background:#fff!important}
+  `;
 
   const style=document.createElement('style');style.id='patrimonio-dark-theme';style.textContent=css;document.head.appendChild(style);
   const addButton=()=>{
