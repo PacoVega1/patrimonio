@@ -8,7 +8,7 @@
   async function updateLastQuotesTimestamp(){
     const top = document.querySelector('#app .top');
     const tabs = document.querySelector('#app .tabs');
-    if (!top || !tabs || !window.S || !window.db) return;
+    if (!top || !tabs || typeof S === 'undefined' || typeof db === 'undefined') return;
     let label = document.getElementById('lastQuotesUpdate');
     if (!label) {
       label = document.createElement('div');
