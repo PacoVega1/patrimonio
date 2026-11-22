@@ -5,6 +5,8 @@
   const originalRender = window.render;
   if (typeof originalRender !== 'function') return;
 
+  let automaticUpdateStarted = false;
+
   async function updateLastQuotesTimestamp(){
     const top = document.querySelector('#app .top');
     const tabs = document.querySelector('#app .tabs');
@@ -70,7 +72,7 @@
     installButton();
   };
 
-  async function updateValues(){
+  async function updateValues(silent = false){
     const btn = document.getElementById('refreshValuesBtn');
     if (!btn) return;
     btn.disabled = true;
@@ -110,14 +112,31 @@
       if (noSource.length) message += '\n\nSIN FUENTE ACTIVA:\n' + noSource.map(x => x.producto).join('\n');
       if (updated.length) message += '\n\nACTUALIZADOS:\n' + updated.map(x => x.producto + ': ' + x.fecha + ' — ' + fmt(x.valor) + ' ' + (x.fuente ? '(' + x.fuente + ')' : '')).join('\n');
       message += '\n\nLas cuentas y saldos manuales no se modifican.';
-      alert(message);
+      if (!silent) alert(message);
     } catch(e) {
-      alert('No se pudo completar la actualización automática.\n' + (e.message || String(e)));
+      if (!silent) alert('No se pudo completar la actualización automática.\\n' + (e.message || String(e)));
+      else { const status = document.getElementById('lastQuotesUpdate'); if (status) status.textContent = 'Actualización automática: no se pudo completar'; }
     } finally {
       const current = document.getElementById('refreshValuesBtn');
       if (current) { current.disabled = false; current.textContent = label; }
     }
   }
+  // Actualiza automáticamente una vez después de la primera carga autenticada.
+  // La bandera evita que el load() posterior a la actualización vuelva a lanzarla.
+  const originalLoad = window.load;
+  if (typeof originalLoad === 'function') {
+    window.load = async function(){
+      const result = await originalLoad.apply(this, arguments);
+      if (!automaticUpdateStarted && typeof S !== 'undefined' && S.user) {
+        automaticUpdateStarted = true;
+        const status = document.getElementById('lastQuotesUpdate');
+        if (status) status.textContent = 'Actualizando cotizaciones…';
+        updateValues(true);
+      }
+      return result;
+    };
+  }
+
   // El primer render puede haberse ejecutado antes de cargar este archivo.
   installButton();
 })();
