@@ -96,7 +96,7 @@ function brandDomain(name,kind='product'){
 function brandMark(name,kind='product'){
  const label=String(name||'?').trim(),initials=(label.match(/[A-Za-zÁÉÍÓÚÜÑ0-9]+/g)||['?']).slice(0,2).map(x=>x[0]).join('').toUpperCase();
  const domain=brandDomain(label,kind),fallback='<span class="brand-fallback">'+esc(initials)+'</span>';
- return '<span class="brand-mark '+(kind==='entity'?'brand-entity':'brand-product')+'">'+(domain?'<img src="https://www.google.com/s2/favicons?domain='+encodeURIComponent(domain)+'&sz=64" alt="" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\'">'+fallback.replace('class="brand-fallback"','class="brand-fallback" style="display:none"'):fallback)+'</span>';
+ return '<span class="brand-mark '+(kind==='entity'?'brand-entity':'brand-product')+'">'+(domain?'<img src="https://www.google.com/s2/favicons?domain='+encodeURIComponent(domain)+'&sz=128" alt="" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\'">'+fallback.replace('class="brand-fallback"','class="brand-fallback" style="display:none"'):fallback)+'</span>';
 }
 function productSourcePanel(p){
  if(account(p))return '<div class="source-panel"><b>Origen del saldo</b><span>Introducción manual · No utiliza una fuente de cotización automática.</span></div>';
