@@ -114,7 +114,8 @@
       message += '\n\nLas cuentas y saldos manuales no se modifican.';
       if (!silent) alert(message);
     } catch(e) {
-      alert('No se pudo completar la actualización automática.\n' + (e.message || String(e)));
+      if (!silent) alert('No se pudo completar la actualización automática.\\n' + (e.message || String(e)));
+      else { const status = document.getElementById('lastQuotesUpdate'); if (status) status.textContent = 'Actualización automática: no se pudo completar'; }
     } finally {
       const current = document.getElementById('refreshValuesBtn');
       if (current) { current.disabled = false; current.textContent = label; }
