@@ -278,10 +278,8 @@ Deno.serve(async (req) => {
       if (!source?.activa) continue;
       try {
         const sourceName = String(source.nombre || "").toLowerCase();
-        if (/CABK OPORTUNIDAD|CABK DESTINO 2030/i.test(p.nombre)) {
-          // Estos dos productos tienen Investing como fuente configurada.
-          // Consultar esa fuente evita depender del formato cambiante de la ficha de CaixaBank.
-          got = await investingLatest(p.nombre, p.isin || null);
+        if (sourceName.includes("caixabank") && /CABK OPORTUNIDAD|CABK DESTINO 2030/i.test(p.nombre)) {
+          got = await caixabankPensionLatest(p.nombre);
         } else if (sourceName.includes("yahoo") || sourceName.includes("newton")) {
           if (!p.ticker) throw new Error("Producto sin ticker");
           got = await yahooLatest(p.ticker);
@@ -357,7 +355,7 @@ Deno.serve(async (req) => {
     // Para fondos/planes, la valoración automática se registra aparte y jamás
     // sustituye una valoración manual de la misma fecha.
     const sourceType = String(source.nombre || "").toLowerCase();
-    if (sourceType.includes("investing") || sourceType.includes("bankinter")) {
+    if (sourceType.includes("investing") || sourceType.includes("bankinter") || sourceType.includes("caixabank")) {
       const { data: manual } = await supabase
         .from("valoraciones_historicas")
         .select("id,precio_unitario,origen")
