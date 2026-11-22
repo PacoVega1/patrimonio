@@ -105,15 +105,26 @@ async function investingLatest(productName: string, isin: string | null) {
   const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36", "Accept-Language": "es-ES,es;q=0.9,en;q=0.8" } });
   if (!r.ok) throw new Error(`Investing HTTP ${r.status}`);
   const html = await r.text();
-  const text = html.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;|&#160;/gi, " ").replace(/&amp;/gi, "&").replace(/\s+/g, " ");
+  if (!isin || !html.toUpperCase().includes(isin.toUpperCase()))
+    throw new Error("Investing devolvió una ficha que no coincide con el ISIN solicitado");
   const candidates: Array<{fecha:string;cierre:number}> = [];
-  const rowRegex = /(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})[\s\S]{0,180}?([0-9]+(?:[.,][0-9]+)*)/g;
-  for (const m of text.matchAll(rowRegex)) {
-    const day = String(m[1]).padStart(2, "0"), month = String(m[2]).padStart(2, "0");
-    const raw = m[4];
-    const cierre = Number(raw.includes(",") ? raw.replace(/\./g, "").replace(",", ".") : raw);
+  const parsePrice = (raw: string) => {
+    const v = raw.replace(/[^0-9,.-]/g, "").trim();
+    if (!v) return NaN;
+    return Number(v.includes(",") ? v.replace(/\\./g, "").replace(",", ".") : v);
+  };
+  // Leer filas de la tabla histórica para no confundir el NAV con porcentajes u otras cifras.
+  const rows = [...html.matchAll(/<tr\\b[^>]*>([\\s\\S]*?)<\\/tr>/gi)];
+  for (const row of rows) {
+    const cells = [...row[1].matchAll(/<td\\b[^>]*>([\\s\\S]*?)<\\/td>/gi)]
+      .map(x => x[1].replace(/<[^>]+>/g, " ").replace(/&nbsp;|&#160;/gi, " ").replace(/&amp;/gi, "&").replace(/\\s+/g, " ").trim());
+    if (cells.length < 2) continue;
+    const d = cells[0].match(/^(\\d{1,2})[.\\/-](\\d{1,2})[.\\/-](\\d{4})$/);
+    if (!d) continue;
+    const day = String(d[1]).padStart(2, "0"), month = String(d[2]).padStart(2, "0");
+    const cierre = parsePrice(cells[1]);
     if (Number.isFinite(cierre) && cierre > 0 && Number(month) >= 1 && Number(month) <= 12 && Number(day) >= 1 && Number(day) <= 31)
-      candidates.push({ fecha: `${m[3]}-${month}-${day}`, cierre });
+      candidates.push({ fecha: `${d[3]}-${month}-${day}`, cierre });
   }
   if (!candidates.length) {
     const dateMatches = [...html.matchAll(/(\d{2})[-\/]([A-Za-z]{3}|\d{2})[-\/](\d{4})/g)];
