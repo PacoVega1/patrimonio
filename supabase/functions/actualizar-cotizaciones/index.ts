@@ -317,47 +317,9 @@ Deno.serve(async (req) => {
     const price = got.cierre;
 
     const selectedSourceName = String(source.nombre || "").toLowerCase();
-    if (selectedSourceName.includes("yahoo") || selectedSourceName.includes("newton")) {
-      try {
-        if (p.ticker) {
-          const history = await yahooHistory(p.ticker);
-          const { data: existingDates } = await supabase.from("cotizaciones_historicas").select("fecha").eq("producto_id", p.id);
-          const known = new Set((existingDates || []).map((x: any) => String(x.fecha)));
-          const missing = history.filter((x: any) => !known.has(x.fecha)).map((x: any) => ({
-            producto_id: p.id, fecha: x.fecha, cierre: x.cierre, moneda: x.moneda || p.moneda || "EUR",
-            fuente_id: sourceId, tipo_precio: "cierre",
-            observaciones: `Carga histórica automática mediante ${source.nombre}; fechas desde 2020.`
-          }));
-          for (let i = 0; i < missing.length; i += 250) {
-            const { error: historyError } = await supabase.from("cotizaciones_historicas").insert(missing.slice(i, i + 250));
-            if (historyError) throw new Error(historyError.message);
-          }
-        }
-      } catch (e) { console.error("Histórico Yahoo incompleto para", p.nombre, e); }
-    } else if (selectedSourceName.includes("bankinter")) {
-      try {
-        const history = await bankinterHistory(p.isin || "");
-        const { data: existingVals } = await supabase.from("valoraciones_historicas").select("fecha,origen").eq("producto_id", p.id);
-        const knownAuto = new Set((existingVals || []).filter((x: any) => x.origen === "automatico").map((x: any) => String(x.fecha)));
-        const knownManual = new Set((existingVals || []).filter((x: any) => x.origen === "manual").map((x: any) => String(x.fecha)));
-        let quantity = await quantityAtDate(supabase, p.id, userId, history[0]?.fecha || date);
-        if (quantity === 0) {
-          const { data: components } = await supabase.from("cartera_componentes").select("cantidad").eq("producto_id", p.id).eq("activo", true);
-          quantity = (components || []).reduce((s: number, x: any) => s + Number(x.cantidad || 0), 0);
-        }
-        quantity = Math.max(0, quantity);
-        const missingVals = history.filter((x: any) => !knownAuto.has(x.fecha) && !knownManual.has(x.fecha)).map((x: any) => ({
-          user_id: userId, producto_id: p.id, fecha: x.fecha, cantidad: quantity,
-          precio_unitario: x.cierre, valor_total: x.cierre * quantity, moneda: x.moneda || "EUR",
-          origen: "automatico", fuente: source.nombre,
-          observaciones: "Carga histórica automática desde 2020; no sobrescribe valoraciones manuales."
-        }));
-        for (let i = 0; i < missingVals.length; i += 250) {
-          const { error: historyError } = await supabase.from("valoraciones_historicas").insert(missingVals.slice(i, i + 250));
-          if (historyError) throw new Error(historyError.message);
-        }
-      } catch (e) { console.error("Histórico Bankinter incompleto para", p.nombre, e); }
-    }
+    // La importación histórica masiva se realiza exclusivamente mediante CSV,
+    // según la configuración de Patrimonio. Aquí solo se guarda la cotización
+    // diaria obtenida en esta ejecución; no se descargan ni insertan series antiguas.
 
     // Acciones/ETF y cualquier producto cuya fuente sea una cotización se
     // guardan en cotizaciones_historicas. No se modifica ningún registro.
