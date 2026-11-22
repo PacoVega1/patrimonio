@@ -91,7 +91,9 @@ function investingUrl(productName: string, isin: string | null) {
   const fidelityFunds: Record<string, string> = {
     "IE00BYX5M476": "https://es.investing.com/funds/ie00byx5m476-historical-data",
     "IE00BYX5MD61": "https://es.investing.com/funds/ie00byx5md61-historical-data",
-    "IE00BYX5NX33": "https://es.investing.com/funds/ie00byx5nx33-historical-data"
+    "IE00BYX5NX33": "https://es.investing.com/funds/ie00byx5nx33-historical-data",
+    "IE00BYX5N771": "https://es.investing.com/funds/ie00byx5n771-historical-data",
+    "IE00BYX5MX67": "https://es.investing.com/funds/ie00byx5mx67-historical-data"
   };
   if (isin && fidelityFunds[isin.toUpperCase()]) return fidelityFunds[isin.toUpperCase()];
   if (n.includes("DESTINO 2030")) return "https://es.investing.com/funds/cabk-destino-2030-pp-historical-data";
