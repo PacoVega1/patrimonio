@@ -53,7 +53,8 @@
     top.appendChild(btn);
     if (capture) top.appendChild(capture);
     if (logout) top.appendChild(logout);
-    updateLastQuotesTimestamp();
+    const timestampLabel = updateLastQuotesTimestamp();
+    if (timestampLabel && timestampLabel.textContent.includes('pendiente')) setAppUpdatedTimestamp();
     if (!document.getElementById('refreshValuesResponsiveStyle')) {
       const style = document.createElement('style');
       style.id = 'refreshValuesResponsiveStyle';
@@ -67,7 +68,6 @@
   };
 
   async function updateValues(silent = false){
-    setAppUpdatedTimestamp();
     const btn = document.getElementById('refreshValuesBtn');
     if (!btn) return;
     btn.disabled = true;
