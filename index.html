@@ -99,6 +99,39 @@ body.dark-mode .chart-brand{background:#fff;border-color:#7890ad}
 .chart-title-brand{display:inline-flex!important;vertical-align:middle!important;align-items:center!important;margin-right:10px!important;line-height:1!important}
 .chart-title-brand .brand-mark{width:30px!important;height:30px!important;flex:0 0 30px!important;border-radius:7px!important;padding:0!important}
 .chart-title-brand .brand-mark img{width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;object-fit:contain!important;background:#fff}
+
+/* Periodos en gráficas de fichas de productos: mismo selector que el dashboard principal */
+body .modalbox .dash-filters{
+ display:inline-flex!important;align-items:center!important;justify-content:flex-start!important;
+ flex-wrap:wrap!important;gap:5px!important;width:max-content!important;max-width:100%!important;
+ box-sizing:border-box!important;padding:5px!important;margin:12px 0!important;
+ background:#e8eef6!important;border:1.5px solid #bdcde0!important;
+ border-radius:12px!important;box-shadow:inset 0 1px 2px rgba(20,40,70,.06)!important;
+}
+body .modalbox .dash-filters .dash-filter{
+ display:inline-flex!important;align-items:center!important;justify-content:center!important;
+ flex:0 0 auto!important;min-height:34px!important;margin:0!important;padding:8px 12px!important;
+ background:#fff!important;border:1.5px solid #c6d4e5!important;border-radius:8px!important;
+ color:#365273!important;font-size:13px!important;font-weight:800!important;line-height:1.2!important;
+ text-decoration:none!important;box-shadow:0 1px 2px rgba(20,40,70,.06)!important;
+}
+body .modalbox .dash-filters .dash-filter.active{
+ background:#245b9f!important;border-color:#245b9f!important;color:#fff!important;
+ box-shadow:0 2px 5px rgba(20,55,100,.22)!important;
+}
+body.dark-mode .modalbox .dash-filters{
+ background:#142337!important;border-color:#526984!important;box-shadow:0 2px 6px rgba(0,0,0,.22)!important;
+}
+body.dark-mode .modalbox .dash-filters .dash-filter{
+ background:#263b53!important;border-color:#526984!important;color:#e1eaf5!important;box-shadow:none!important;
+}
+body.dark-mode .modalbox .dash-filters .dash-filter.active{
+ background:#2868ad!important;border-color:#69a6e8!important;color:#fff!important;
+}
+@media(max-width:600px){
+ body .modalbox .dash-filters{width:100%!important;gap:4px!important}
+ body .modalbox .dash-filters .dash-filter{flex:1 1 auto!important;padding:8px 7px!important}
+}
 </style>
 </head>
 <body>
@@ -107,7 +140,7 @@ body.dark-mode .chart-brand{background:#fff;border-color:#7890ad}
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <script>
 window.addEventListener('error',function(e){console.error('Error de carga de Patrimonio:',e.message,e.filename,e.lineno,e.colno);var a=document.getElementById('app');if(a&&(!a.textContent||a.textContent.indexOf('Cargando')>=0)){a.innerHTML='<div class="wrap"><div class="card error"><h2>Error al iniciar Patrimonio</h2><p>'+String(e.message||'Error desconocido')+'</p><small>'+String(e.filename||'')+':'+String(e.lineno||'')+'</small></div></div>';}});
-function cargarPatrimonio(){var s=document.createElement('script');s.src='./app.js?v=20261122-evolution-logo-filters-6';s.onload=function(){var f=document.createElement('script');f.src='./ui-fixes.js?v=20261121-operations-edit-5';f.onload=function(){var y=document.createElement('script');y.src='./yahoo-sync.js?v=20261121-blue-area-2';y.onload=function(){var z=document.createElement('script');z.src='./pension-ops-fix.js?v=20261121-unit-value-column-7';z.onload=function(){var d=document.createElement('script');d.src='./dashboard-default.js?v=20260830-1500';d.onload=function(){var q=document.createElement('script');q.src='./dashboard.js?v=20261122-period-buttons-global-8';q.onload=function(){var p=document.createElement('script');p.src='./dashboard-polish.js?v=20260830-1200';p.onload=function(){var i=document.createElement('script');i.src='./intereses-import-v2.js?v=20261021-2';i.onload=function(){var o=document.createElement('script');o.src='./intereses-ocr-fix.js?v=20261016-1';o.onload=function(){var rv=document.createElement('script');rv.src='./refresh-values.js?v=20261122-app-timestamp-4';rv.onload=function(){var dc=document.createElement('script');dc.src='./documentos-inteligentes.js?v=20261025-8';dc.onload=function(){var th=document.createElement('script');th.src='./theme-toggle.js?v=20261122-theme-restored-3';document.body.appendChild(th)};document.body.appendChild(dc)};document.body.appendChild(rv)};document.body.appendChild(o)};document.body.appendChild(i)};document.body.appendChild(p)};document.body.appendChild(q)};document.body.appendChild(d)};document.body.appendChild(z)};document.body.appendChild(y)};document.body.appendChild(f)};s.onerror=function(){document.getElementById('app').innerHTML='<div class="wrap"><div class="card error"><h2>No se ha podido cargar Patrimonio</h2><p>No se pudo cargar app.js.</p></div></div>';};document.body.appendChild(s)}
+function cargarPatrimonio(){var s=document.createElement('script');s.src='./app.js?v=20261122-evolution-logo-filters-6';s.onload=function(){var f=document.createElement('script');f.src='./ui-fixes.js?v=20261121-operations-edit-5';f.onload=function(){var y=document.createElement('script');y.src='./yahoo-sync.js?v=20261121-blue-area-2';y.onload=function(){var z=document.createElement('script');z.src='./pension-ops-fix.js?v=20261121-unit-value-column-7';z.onload=function(){var d=document.createElement('script');d.src='./dashboard-default.js?v=20260830-1500';d.onload=function(){var q=document.createElement('script');q.src='./dashboard.js?v=20261122-modal-periods-box-9';q.onload=function(){var p=document.createElement('script');p.src='./dashboard-polish.js?v=20260830-1200';p.onload=function(){var i=document.createElement('script');i.src='./intereses-import-v2.js?v=20261021-2';i.onload=function(){var o=document.createElement('script');o.src='./intereses-ocr-fix.js?v=20261016-1';o.onload=function(){var rv=document.createElement('script');rv.src='./refresh-values.js?v=20261122-app-timestamp-4';rv.onload=function(){var dc=document.createElement('script');dc.src='./documentos-inteligentes.js?v=20261025-8';dc.onload=function(){var th=document.createElement('script');th.src='./theme-toggle.js?v=20261122-theme-restored-3';document.body.appendChild(th)};document.body.appendChild(dc)};document.body.appendChild(rv)};document.body.appendChild(o)};document.body.appendChild(i)};document.body.appendChild(p)};document.body.appendChild(q)};document.body.appendChild(d)};document.body.appendChild(z)};document.body.appendChild(y)};document.body.appendChild(f)};s.onerror=function(){document.getElementById('app').innerHTML='<div class="wrap"><div class="card error"><h2>No se ha podido cargar Patrimonio</h2><p>No se pudo cargar app.js.</p></div></div>';};document.body.appendChild(s)}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onload="cargarPatrimonio()" onerror="document.getElementById('app').innerHTML='<div class=&quot;wrap&quot;><div class=&quot;card error&quot;><h2>No se ha podido cargar Patrimonio</h2><p>No se ha podido cargar la biblioteca de Supabase.</p></div></div>'"></script>
 </body>
