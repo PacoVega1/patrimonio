@@ -111,15 +111,15 @@ async function investingLatest(productName: string, isin: string | null) {
   const parsePrice = (raw: string) => {
     const v = raw.replace(/[^0-9,.-]/g, "").trim();
     if (!v) return NaN;
-    return Number(v.includes(",") ? v.replace(/\\./g, "").replace(",", ".") : v);
+    return Number(v.includes(",") ? v.replace(/\./g, "").replace(",", ".") : v);
   };
   // Leer filas de la tabla histórica para no confundir el NAV con porcentajes u otras cifras.
-  const rows = [...html.matchAll(/<tr\\b[^>]*>([\\s\\S]*?)<\\/tr>/gi)];
+  const rows = [...html.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)];
   for (const row of rows) {
-    const cells = [...row[1].matchAll(/<td\\b[^>]*>([\\s\\S]*?)<\\/td>/gi)]
-      .map(x => x[1].replace(/<[^>]+>/g, " ").replace(/&nbsp;|&#160;/gi, " ").replace(/&amp;/gi, "&").replace(/\\s+/g, " ").trim());
+    const cells = [...row[1].matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)]
+      .map(x => x[1].replace(/<[^>]+>/g, " ").replace(/&nbsp;|&#160;/gi, " ").replace(/&amp;/gi, "&").replace(/\s+/g, " ").trim());
     if (cells.length < 2) continue;
-    const d = cells[0].match(/^(\\d{1,2})[.\\/-](\\d{1,2})[.\\/-](\\d{4})$/);
+    const d = cells[0].match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})$/);
     if (!d) continue;
     const day = String(d[1]).padStart(2, "0"), month = String(d[2]).padStart(2, "0");
     const cierre = parsePrice(cells[1]);
