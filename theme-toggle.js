@@ -81,6 +81,21 @@
     body.dark-mode .hero{color:#fff!important}
     body.dark-mode .sub,body.dark-mode .brand p{color:#b8c5d8!important}
     @media(max-width:650px){body.dark-mode .top{align-items:flex-start;flex-wrap:wrap}}
+
+    /* Refuerzo de contraste y lectura en ambos temas */
+    body{ -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility }
+    .pill{font-size:12px!important;font-weight:750!important;line-height:1.35}
+    .entity-investment-title h3,.entity-accounts-title h3{font-size:21px!important;font-weight:850!important}
+    body.dark-mode .entity-investment-title,body.dark-mode .entity-accounts-title{background:#223a36!important}
+    body.dark-mode .entity-investment-title h3,body.dark-mode .entity-accounts-title h3{color:#b5f2d0!important}
+    body.dark-mode .entity-investment-title span,body.dark-mode .entity-accounts-title span{color:#d0dfeb!important}
+    body.dark-mode .dash-axis,body.dark-mode .dash-chart-label{fill:#e0eaf6!important;font-size:16px!important;font-weight:750!important}
+    body.dark-mode .dash-chart-value{fill:#fff!important;stroke:#172333!important;font-size:17px!important}
+    body.dark-mode .dash-gridline{stroke:#52647b!important;stroke-width:1.2}
+    body.dark-mode .pill{background:#29466a!important;color:#e1edff!important}
+    body.dark-mode .ptable th,body.dark-mode .history th{color:#d2deed!important}
+    body.dark-mode .source-panel{background:#202f42!important;color:#f0f5fb!important;border-color:#526b89!important}
+    body.dark-mode .source-panel span,body.dark-mode .source-panel small{color:#d0dceb!important}
   `;
 
   const style=document.createElement('style');style.id='patrimonio-dark-theme';style.textContent=css;document.head.appendChild(style);
