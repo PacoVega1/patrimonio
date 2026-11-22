@@ -129,17 +129,6 @@ async function investingLatest(productName: string, isin: string | null) {
     if (Number.isFinite(cierre) && cierre > 0 && Number(month) >= 1 && Number(month) <= 12 && Number(day) >= 1 && Number(day) <= 31)
       candidates.push({ fecha: `${d[3]}-${month}-${day}`, cierre });
   }
-  if (!candidates.length) {
-    const dateMatches = [...html.matchAll(/(\d{2})[-\/]([A-Za-z]{3}|\d{2})[-\/](\d{4})/g)];
-    const valueMatches = [...html.matchAll(/(?:Último|Last|Close)[^0-9]{0,100}([0-9]+[.,][0-9]+)/gi)];
-    if (dateMatches.length && valueMatches.length) {
-      const d = dateMatches[dateMatches.length - 1];
-      const monthNames: Record<string,string> = { ene:"01",feb:"02",mar:"03",abr:"04",may:"05",jun:"06",jul:"07",ago:"08",sep:"09",oct:"10",nov:"11",dic:"12" };
-      const month = monthNames[(d[2] || "").toLowerCase()] || d[2];
-      const raw = valueMatches[valueMatches.length - 1][1].replace(/\./g, "").replace(",", ".");
-      candidates.push({ fecha: `${d[3]}-${String(month).padStart(2,"0")}-${d[1]}`, cierre: Number(raw) });
-    }
-  }
   candidates.sort((a,b) => b.fecha.localeCompare(a.fecha));
   const latest = candidates.find(x => Number.isFinite(x.cierre) && x.cierre > 0);
   if (!latest) throw new Error("Investing no devolvió una fecha y un valor liquidativo reconocibles");
