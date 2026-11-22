@@ -61,7 +61,7 @@
     if (!document.getElementById('refreshValuesResponsiveStyle')) {
       const style = document.createElement('style');
       style.id = 'refreshValuesResponsiveStyle';
-      style.textContent = '.last-quotes-update{text-align:right;color:#71809a;font-size:12px;font-weight:600;margin:-7px 2px 10px;font-variant-numeric:tabular-nums}@media(max-width:600px){#refreshValuesBtn{font-size:12px;padding:9px 10px}.top{flex-wrap:wrap}.last-quotes-update{text-align:left;margin:0 0 10px}}';
+      style.textContent = '.last-quotes-update{display:table;text-align:center;color:#244f86;font-size:15px;font-weight:700;line-height:1.4;margin:2px auto 13px;padding:7px 16px;background:#e8eff8;border:1px solid #d3e0f1;border-radius:20px;font-variant-numeric:tabular-nums;letter-spacing:.1px}@media(max-width:600px){#refreshValuesBtn{font-size:12px;padding:9px 10px}.top{flex-wrap:wrap}.last-quotes-update{display:block;text-align:center;font-size:14px;margin:3px 8px 12px;padding:8px 10px}}';
       document.head.appendChild(style);
     }
   }
