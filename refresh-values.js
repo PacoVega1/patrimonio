@@ -7,36 +7,30 @@
 
   let automaticUpdateStarted = false;
 
-  async function updateLastQuotesTimestamp(){
-    const top = document.querySelector('#app .top');
+  function updateLastQuotesTimestamp(){
     const tabs = document.querySelector('#app .tabs');
-    if (!top || !tabs || typeof S === 'undefined' || typeof db === 'undefined') return;
+    if (!tabs) return null;
     let label = document.getElementById('lastQuotesUpdate');
     if (!label) {
       label = document.createElement('div');
       label.id = 'lastQuotesUpdate';
       label.className = 'last-quotes-update';
       tabs.parentNode.insertBefore(label, tabs);
+      label.textContent = 'Última actualización de Patrimonio: pendiente';
     }
-    const ids = (S.p || []).map(p => p.id).filter(Boolean);
-    if (!ids.length) {
-      label.textContent = 'Última actualización de cotizaciones: Sin datos';
-      return;
-    }
-    const { data, error } = await db.from('productos_fuentes')
-      .select('ultima_comprobacion')
-      .in('producto_id', ids)
-      .not('ultima_comprobacion', 'is', null)
-      .order('ultima_comprobacion', { ascending: false })
-      .limit(1);
-    if (error) {
-      label.textContent = 'Última actualización de cotizaciones: No disponible';
-      return;
-    }
-    const stamp = data && data[0] && data[0].ultima_comprobacion;
-    label.textContent = stamp
-      ? 'Última actualización de cotizaciones: ' + new Intl.DateTimeFormat('es-ES', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(stamp))
-      : 'Última actualización de cotizaciones: Sin datos';
+    return label;
+  }
+
+  function setAppUpdatedTimestamp(){
+    const label = updateLastQuotesTimestamp();
+    if (!label) return;
+    const now = new Date();
+    const stamp = new Intl.DateTimeFormat('es-ES', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+    }).format(now);
+    label.textContent = 'Última actualización de Patrimonio: ' + stamp;
+    label.title = 'Fecha y hora en que se ha ejecutado la actualización de la aplicación, independientemente de que hayan cambiado las cotizaciones.';
   }
 
   function installButton(){
@@ -73,6 +67,7 @@
   };
 
   async function updateValues(silent = false){
+    setAppUpdatedTimestamp();
     const btn = document.getElementById('refreshValuesBtn');
     if (!btn) return;
     btn.disabled = true;
@@ -90,16 +85,6 @@
       const data = response.data || {};
       if (!data.ok && data.error) throw new Error(data.error);
       const resumen = data.resumen || {};
-      const checkedAt = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short', timeStyle: 'short' }).format(new Date());
-      const status = document.getElementById('lastQuotesUpdate');
-      if (status) {
-        status.textContent = 'Comprobación realizada: ' + checkedAt +
-          ' · Actualizados: ' + (resumen.actualizados || 0) +
-          ' · Discrepancias: ' + (resumen.discrepancias || 0) +
-          ' · Errores: ' + (resumen.errores || 0) +
-          ' · Sin fuente: ' + (resumen.sin_fuente || 0);
-        status.title = 'Resultado del último intento de actualización. La fecha de última cotización registrada solo cambia cuando una fuente devuelve y guarda correctamente un dato.';
-      }
       await load();
       const details = data.detalles || [];
       let message = 'Actualización terminada.\nProductos actualizados: ' + (resumen.actualizados || 0) +
@@ -125,7 +110,6 @@
       if (!silent) alert(message);
     } catch(e) {
       if (!silent) alert('No se pudo completar la actualización automática.\\n' + (e.message || String(e)));
-      else { const status = document.getElementById('lastQuotesUpdate'); if (status) status.textContent = 'No se pudo completar la actualización automática: ' + (e.message || String(e)); }
     } finally {
       const current = document.getElementById('refreshValuesBtn');
       if (current) { current.disabled = false; current.textContent = label; }
