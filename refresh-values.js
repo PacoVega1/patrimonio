@@ -89,8 +89,18 @@
       }
       const data = response.data || {};
       if (!data.ok && data.error) throw new Error(data.error);
-      await load();
       const resumen = data.resumen || {};
+      const checkedAt = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short', timeStyle: 'short' }).format(new Date());
+      const status = document.getElementById('lastQuotesUpdate');
+      if (status) {
+        status.textContent = 'Comprobación realizada: ' + checkedAt +
+          ' · Actualizados: ' + (resumen.actualizados || 0) +
+          ' · Discrepancias: ' + (resumen.discrepancias || 0) +
+          ' · Errores: ' + (resumen.errores || 0) +
+          ' · Sin fuente: ' + (resumen.sin_fuente || 0);
+        status.title = 'Resultado del último intento de actualización. La fecha de última cotización registrada solo cambia cuando una fuente devuelve y guarda correctamente un dato.';
+      }
+      await load();
       const details = data.detalles || [];
       let message = 'Actualización terminada.\nProductos actualizados: ' + (resumen.actualizados || 0) +
         '.\nDiscrepancias (no sobrescritas): ' + (resumen.discrepancias || 0) +
@@ -115,7 +125,7 @@
       if (!silent) alert(message);
     } catch(e) {
       if (!silent) alert('No se pudo completar la actualización automática.\\n' + (e.message || String(e)));
-      else { const status = document.getElementById('lastQuotesUpdate'); if (status) status.textContent = 'Actualización automática: no se pudo completar'; }
+      else { const status = document.getElementById('lastQuotesUpdate'); if (status) status.textContent = 'No se pudo completar la actualización automática: ' + (e.message || String(e)); }
     } finally {
       const current = document.getElementById('refreshValuesBtn');
       if (current) { current.disabled = false; current.textContent = label; }
