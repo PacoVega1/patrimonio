@@ -115,6 +115,32 @@
     body.dark-mode .modalbox .dash-gridline{stroke:#53657c!important}
     body.dark-mode .product-modal-brand h2{color:#f2f6fc!important}
     body.dark-mode .brand-mark{background:#fff!important}
+    /* Cifras más limpias y fáciles de leer en el modo oscuro.
+       Solo afecta a columnas numéricas y métricas; no altera el modo claro. */
+    body.dark-mode .ptable tbody td:nth-child(n+2):nth-child(-n+9),
+    body.dark-mode .history tbody td{
+      font-family:"Segoe UI",Arial,sans-serif!important;
+      font-size:14px!important;
+      font-weight:600!important;
+      letter-spacing:0!important;
+      font-variant-numeric:tabular-nums lining-nums;
+      -webkit-font-smoothing:auto;
+      text-rendering:auto;
+    }
+    body.dark-mode .ptable tbody td.gain,
+    body.dark-mode .ptable tbody td.loss,
+    body.dark-mode .history tbody td.gain,
+    body.dark-mode .history tbody td.loss{
+      font-weight:650!important;
+    }
+    body.dark-mode .category-metric b{
+      font-family:"Segoe UI",Arial,sans-serif!important;
+      font-weight:700!important;
+      letter-spacing:0!important;
+      font-variant-numeric:tabular-nums lining-nums;
+      -webkit-font-smoothing:auto;
+      text-rendering:auto;
+    }
   `;
 
   const style=document.createElement('style');style.id='patrimonio-dark-theme';style.textContent=css;document.head.appendChild(style);
