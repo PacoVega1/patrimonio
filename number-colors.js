@@ -23,6 +23,10 @@
     body.dark-mode .history td.loss,
     body.dark-mode .dash-negative,
     body.dark-mode .dash-card .dash-negative{color:#ff8585!important}
+
+    /* Métricas de entidad/categoría que se generan con color inline */
+    body.dark-mode .category-metric b[style*="#16834b"]{color:#55e39a!important}
+    body.dark-mode .category-metric b[style*="#c43b32"]{color:#ff8585!important}
   `;
   document.head.appendChild(style);
 })();
