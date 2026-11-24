@@ -104,8 +104,8 @@ function brandMark(name,kind='product'){
  ];
  const logo=logos.find(([re])=>re.test(n))?.[1]||null;
  const domain=isBankinter?null:brandDomain(label,kind),src=logo||(domain?'https://www.google.com/s2/favicons?domain='+encodeURIComponent(domain)+'&sz=128':null);
- const fallback='<span class="brand-fallback '+(isBankinter?'brand-bankinter':'')+'">'+(isBankinter?'bk.':esc(initials))+'</span>';
- return '<span class="brand-mark '+(kind==='entity'?'brand-entity':'brand-product')+'">'+(src?'<img src="'+src+'" alt="'+esc(label)+'" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\'">'+fallback.replace('class="brand-fallback"','class="brand-fallback" style="display:none"'):fallback)+'</span>';
+ const fallback='<span class="brand-fallback '+(isBankinter?'brand-bankinter':'')+'"'+(src?' style="display:none"':'')+'>'+(isBankinter?'bk.':esc(initials))+'</span>';
+ return '<span class="brand-mark '+(kind==='entity'?'brand-entity':'brand-product')+'">'+(src?'<img src="'+src+'" alt="'+esc(label)+'" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\'">'+fallback:fallback)+'</span>';
 }
 function productSourcePanel(p){
  if(account(p))return '<div class="source-panel"><b>Origen del saldo</b><span>Introducción manual · No utiliza una fuente de cotización automática.</span></div>';
