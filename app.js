@@ -96,16 +96,17 @@ function brandDomain(name,kind='product'){
 function brandMark(name,kind='product'){
  const label=String(name||'?').trim(),initials=(label.match(/[A-Za-zÁÉÍÓÚÜÑ0-9]+/g)||['?']).slice(0,2).map(x=>x[0]).join('').toUpperCase();
  const isBankinter=/bankinter/i.test(label),n=label.toLowerCase();
+ const telefonica=/telef[oó]nica|telefonica/.test(n);
  const logos=[
   [/bbva/,'https://commons.wikimedia.org/wiki/Special:FilePath/BBVA_logo_2025.svg'],
-  [/telef[oó]nica|telefonica/,'https://commons.wikimedia.org/wiki/Special:FilePath/Telef%C3%B3nica_2021_logo.svg'],
   [/repsol/,'https://commons.wikimedia.org/wiki/Special:FilePath/Repsol_2025_%28vertical%29.svg'],
   [/indra/,'https://commons.wikimedia.org/wiki/Special:FilePath/Indra-Sistemas-Logo.svg']
  ];
  const logo=logos.find(([re])=>re.test(n))?.[1]||null;
  const domain=isBankinter?null:brandDomain(label,kind),src=logo||(domain?'https://www.google.com/s2/favicons?domain='+encodeURIComponent(domain)+'&sz=128':null);
  const fallback='<span class="brand-fallback '+(isBankinter?'brand-bankinter':'')+'"'+(src?' style="display:none"':'')+'>'+(isBankinter?'bk.':esc(initials))+'</span>';
- return '<span class="brand-mark '+(kind==='entity'?'brand-entity':'brand-product')+'">'+(src?'<img src="'+src+'" alt="'+esc(label)+'" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\'">'+fallback:fallback)+'</span>';
+ const telefonicaMark='<svg class="telefonica-mark" viewBox="0 0 100 100" role="img" aria-label="Telefónica"><g fill="#0066FF"><circle cx="20" cy="20" r="13"/><circle cx="50" cy="20" r="13"/><circle cx="80" cy="20" r="13"/><circle cx="50" cy="50" r="13"/><circle cx="50" cy="80" r="13"/></g></svg>';
+ return '<span class="brand-mark '+(kind==='entity'?'brand-entity':'brand-product')+'">'+(telefonica?telefonicaMark:src?'<img src="'+src+'" alt="'+esc(label)+'" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\'">'+fallback:fallback)+'</span>';
 }
 function productSourcePanel(p){
  if(account(p))return '<div class="source-panel"><b>Origen del saldo</b><span>Introducción manual · No utiliza una fuente de cotización automática.</span></div>';
