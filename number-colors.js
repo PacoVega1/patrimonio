@@ -6,12 +6,23 @@
   const style=document.createElement('style');
   style.id='patrimonio-number-colors';
   style.textContent=`
-    /* Ganancias y rentabilidades positivas */
+    /* Modo claro: se conservan exactamente los colores actuales */
     .gain,.dash-positive{color:#16834b!important}
-    /* Pérdidas y rentabilidades negativas */
     .loss,.dash-negative{color:#c43b32!important}
-    body.dark-mode .gain,body.dark-mode .dash-positive{color:#55e39a!important}
-    body.dark-mode .loss,body.dark-mode .dash-negative{color:#ff8585!important}
+
+    /* Modo oscuro: selectores más específicos para prevalecer sobre
+       los colores generales de celdas y tarjetas del tema oscuro. */
+    body.dark-mode .gain,
+    body.dark-mode .ptable td.gain,
+    body.dark-mode .history td.gain,
+    body.dark-mode .dash-positive,
+    body.dark-mode .dash-card .dash-positive{color:#55e39a!important}
+
+    body.dark-mode .loss,
+    body.dark-mode .ptable td.loss,
+    body.dark-mode .history td.loss,
+    body.dark-mode .dash-negative,
+    body.dark-mode .dash-card .dash-negative{color:#ff8585!important}
   `;
   document.head.appendChild(style);
 })();
