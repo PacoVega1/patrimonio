@@ -3,6 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<script>
+/* Al recargar Patrimonio, comenzar siempre desde la cabecera.
+   Evita que el navegador restaure la posición de desplazamiento anterior. */
+(function(){
+  if('scrollRestoration' in history) history.scrollRestoration='manual';
+  function goToTop(){window.scrollTo({top:0,left:0,behavior:'instant'});}
+  window.addEventListener('pageshow',goToTop);
+  window.addEventListener('load',goToTop,{once:true});
+})();
+</script>
 <title>Patrimonio</title>
 <style>
 :root{--b:#234b86;--bg:#f4f7fb;--c:#fff;--t:#17243d;--m:#71809a;--l:#d9e2ee;--g:#16834b;--r:#c43b32;--w:#8a6919}
